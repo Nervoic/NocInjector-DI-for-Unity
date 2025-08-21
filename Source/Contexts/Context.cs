@@ -9,6 +9,7 @@ namespace NocInjector
     /// </summary>
     public class Context : MonoBehaviour
     {
+        [SerializeField] private bool autoInstall;
         [SerializeField] private ContextLifetime lifetime;
 
         [SerializeField] private Installer[] installers;
@@ -32,6 +33,7 @@ namespace NocInjector
         private void Awake()
         {
             if (lifetime is ContextLifetime.Project) DontDestroyOnLoad(gameObject);
+            if (autoInstall) Install();
         }
 
         /// <summary>
