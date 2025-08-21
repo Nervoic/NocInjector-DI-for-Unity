@@ -31,6 +31,7 @@ public class MyServiceInstaller : Installer
 }
 ```
 For components, registration is automatic in the local ObjectContainer.
+
 2. Request the service manually:
 
 ```csharp
