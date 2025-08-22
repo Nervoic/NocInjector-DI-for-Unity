@@ -1,5 +1,8 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
@@ -29,12 +32,32 @@ namespace NocInjector
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T ContainerGetComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : Component
+        public static T ContainerGetComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
         {
             var injectObject = gameObject.GetComponent<InjectObject>();
             
             if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            return (T)injectObject.Container.ResolveByInterface(typeof(T), realisationTag);
+            return injectObject.Container.ResolveByInterface(typeof(T), realisationTag) as T;
+        }
+        
+        /// <summary>
+        /// Searches for the first object on the stage that implements the T interface
+        /// </summary>
+        /// <param name="gameObject"></param>
+        /// <param name="realisationTag"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static T FindAnyComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
+        {
+            
+            var interfaceType = typeof(T);
+            if (!interfaceType.IsInterface) return null;
+            var realisations = Object.FindObjectsByType<Component>(FindObjectsSortMode.None).Where(o => interfaceType.IsAssignableFrom(o.GetType()));
+
+            return realisations.FirstOrDefault(r =>
+                r.GetType().IsDefined(typeof(RegisterByInterface), true) &&
+                r.GetType().GetCustomAttribute<RegisterByInterface>().InterfaceType == interfaceType &&
+                r.GetType().GetCustomAttribute<RegisterByInterface>().RealisationTag == realisationTag) as T;
         }
         
         /// <summary>
