@@ -23,25 +23,7 @@ namespace NocInjector
                 
                 if (typeToInjection.IsInterface)
                 {
-                    var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByInterface>();
-
-                    var realisationTag = injectByInterfaceAttr.RealisationTag;
-
-                    foreach (var context in _contexts)
-                    {
-                        if (context.Container.ResolveByInterface(typeToInjection, realisationTag) is not null) currentContext = context;
-                    }
-
-                    if (currentContext is null)
-                    {
-                        Debug.LogError($"Please register realisations to {typeToInjection.Name} interface with installers");
-                        return;
-                    }
-
-                    var realisation = currentContext.Container.ResolveByInterface(typeToInjection, realisationTag);
-                    if (!typeToInjection.IsAssignableFrom(realisation.GetType())) Debug.LogError($"{realisation.GetType().Name} it is not inherited from the {typeToInjection.Name} interface.");
-                    
-                    injectableMember.SetValue(obj, realisation);
+                    InjectAsInterface(injectableMember, currentContext, obj);
                     return;
                 }
 
@@ -60,6 +42,32 @@ namespace NocInjector
             {
                 Debug.LogError($"Error during service injection: {e.Message}");
             }
+        }
+
+        private void InjectAsInterface(MemberInfo injectableMember, Context currentContext, object obj)
+        {
+            var typeToInjection = injectableMember.GetMemberType();
+            var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByInterface>();
+
+            var realisationTag = injectByInterfaceAttr.RealisationTag;
+
+            foreach (var context in _contexts)
+            {
+                if (context.Container.ResolveByInterface(typeToInjection, realisationTag) is not null) 
+                    currentContext = context;
+            }
+
+            if (currentContext is null)
+            {
+                Debug.LogError($"Please register realisations to {typeToInjection.Name} interface with installers");
+                return;
+            }
+
+            var realisation = currentContext.Container.ResolveByInterface(typeToInjection, realisationTag);
+            if (!typeToInjection.IsAssignableFrom(realisation.GetType())) 
+                Debug.LogError($"{realisation.GetType().Name} it is not inherited from the {typeToInjection.Name} interface.");
+                    
+            injectableMember.SetValue(obj, realisation);
         }
 
         private Context SelectContext(Type typeToInjection)

@@ -15,9 +15,14 @@ namespace NocInjector
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T ContainerGetComponent<T>(this GameObject gameObject) where T : Component
+        public static T ResolveComponent<T>(this GameObject gameObject) where T : Component
         {
-            if (typeof(T).IsInterface) return null;
+            if (typeof(T).IsInterface)
+            {
+                Debug.LogError($"To get a component by interface {typeof(T).Name}, use the ResolveComponentByInterface method");
+                return null;
+            }
+
             var injectObject = gameObject.GetComponent<InjectObject>();
             
             if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
@@ -32,14 +37,19 @@ namespace NocInjector
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T ContainerGetComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
+        public static T ResolveComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
         {
+            if (!typeof(T).IsInterface)
+            {
+                Debug.LogError($"{typeof(T).Name} is not an interface. To get a component from an object container, use the ResolveComponent method");
+                return null;
+            }
             var injectObject = gameObject.GetComponent<InjectObject>();
             
             if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
             return injectObject.Container.ResolveByInterface(typeof(T), realisationTag) as T;
         }
-        
+
         /// <summary>
         /// Searches for the first object on the stage that implements the T interface
         /// </summary>
@@ -47,11 +57,14 @@ namespace NocInjector
         /// <param name="realisationTag"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T FindAnyComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
+        public static T ResolveAnyComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
         {
-            
             var interfaceType = typeof(T);
-            if (!interfaceType.IsInterface) return null;
+            if (!interfaceType.IsInterface)
+            {
+                Debug.LogError($"{typeof(T).Name} is not an interface");
+                return null;
+            }
             var realisations = Object.FindObjectsByType<Component>(FindObjectsSortMode.None).Where(o => interfaceType.IsAssignableFrom(o.GetType()));
 
             return realisations.FirstOrDefault(r =>
@@ -67,9 +80,14 @@ namespace NocInjector
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T AddComponentToContainer<T>(this GameObject gameObject) where T : Component
+        public static T RegisterComponentToContainer<T>(this GameObject gameObject) where T : Component
         {
-            if (typeof(T).IsInterface) return null;
+            if (typeof(T).IsInterface)
+            {
+                Debug.LogError($"Cannot register {typeof(T)} in the container because it is an interface");
+                return null;
+            }
+            
             Component component = gameObject.AddComponent<T>();
 
             var injectObject = gameObject.GetComponent<InjectObject>();

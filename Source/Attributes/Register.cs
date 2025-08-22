@@ -10,9 +10,10 @@ namespace NocInjector
     public class Register : Attribute
     {
         /// <summary>
-        /// Gets the lifetime of the registered service (Singleton or Transient).
+        /// Gets the lifetime of the registered service.
         /// </summary>
         public ServiceLifetime Lifetime { get; }
+        
         /// <summary>
         /// Gets the context lifetime in which the service will be available (Scene or Project).
         /// </summary>

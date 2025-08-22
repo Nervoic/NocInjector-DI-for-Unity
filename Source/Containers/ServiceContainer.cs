@@ -21,16 +21,30 @@ namespace NocInjector
         /// </summary>
         public void Register(Type type, ServiceLifetime lifetime)
         {
-            _servicesContainer.TryAdd(type, lifetime);
+            if (type.IsSubclassOf(typeof(Component)))
+            {
+                Debug.LogError($"The {type.Name} component cannot be added to the service container.");
+                return;
+            }
+            
+            if (!_servicesContainer.TryAdd(type, lifetime))
+                Debug.LogWarning($"The {type.Name} service is already registered in the container.");
         }
         
         /// <summary>
-        /// Registers a service type with the specified lifetime.
+        /// Registers a service T type with the specified lifetime.
         /// </summary>
         public void Register<T>(ServiceLifetime lifetime)
         {
             var type = typeof(T);
-            _servicesContainer.TryAdd(type, lifetime);
+            if (type.IsSubclassOf(typeof(Component)))
+            {
+                Debug.LogError($"The {type.Name} component cannot be added to the service container.");
+                return;
+            }
+            
+            if (!_servicesContainer.TryAdd(type, lifetime))
+                Debug.LogWarning($"The {type.Name} service is already registered in the container.");
         }
 
         /// <summary>
@@ -70,7 +84,7 @@ namespace NocInjector
         }
         
         /// <summary>
-        /// Resolves an instance of the specified service type.
+        /// Resolves an instance of the T service type.
         /// </summary>
 
         public T Resolve<T>()

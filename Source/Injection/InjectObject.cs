@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace NocInjector
@@ -18,10 +19,10 @@ namespace NocInjector
 
         private void InjectToComponents()
         {
-            var components = GetComponents<Component>();
-
-            var injector = new ObjectInjector();
-            Container = injector.Inject(components);
+            var components = GetComponents<Component>().Where(c => c is not null).ToArray();
+            Container = new ObjectContainer(gameObject);
+            
+            new ObjectInjector().Inject(components, Container);
         }
     }
 }
