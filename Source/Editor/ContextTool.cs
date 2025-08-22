@@ -8,8 +8,8 @@ namespace NocInjector
     /// </summary>
     public class ContextTool : EditorWindow
     {
-        private const string SceneContextPath = "Assets/NocInjector/Prefabs/SceneContext.prefab";
-        private const string ProjectContextPath = "Assets/NocInjector/Prefabs/ProjectContext.prefab";
+        private const string SceneContextPath = "Assets/Plugins/NocInjector/Prefabs/SceneContext.prefab";
+        private const string ProjectContextPath = "Assets/Plugins/NocInjector/Prefabs/ProjectContext.prefab";
         
         /// <summary>
         /// Creates a SceneContext prefab instance in the current scene.
