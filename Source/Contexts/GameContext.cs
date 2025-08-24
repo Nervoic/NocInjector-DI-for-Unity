@@ -22,13 +22,15 @@ namespace NocInjector
         public ContextLifetime Lifetime => lifetime;
         
 
-        protected override void Awake()
+        private void Awake()
         {
             if (lifetime is ContextLifetime.Project) 
                 DontDestroyOnLoad(gameObject);
         }
-        protected override void Install()
+        public override void Install()
         {
+            if (Installed) return;
+            
             try
             {
                 Container = new ServiceContainer();

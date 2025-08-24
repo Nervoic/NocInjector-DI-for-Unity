@@ -20,8 +20,10 @@ namespace NocInjector
         /// </summary>
         public ServiceContainer ServiceContainer { get; private set; }
         
-        protected override void Install()
+        public override void Install()
         {
+            if (Installed) return;
+            
             try
             {
                 ComponentContainer = new ComponentContainer(gameObject);

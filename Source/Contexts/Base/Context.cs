@@ -10,21 +10,12 @@ namespace NocInjector
         /// <summary>
         /// Indicates whether the context has been installed.
         /// </summary>
-        public bool Installed { get; private set; }
-
-        protected virtual void Awake()
-        {
-            if (!Installed)
-            {
-                Install();
-                Installed = true;
-            }
-        }
+        protected bool Installed { get; private set; }
         
         /// <summary>
         /// Installs all services using the provided installers.
         /// </summary>
-        protected abstract void Install();
+        public abstract void Install();
 
         public void TryInstall()
         {
