@@ -9,12 +9,12 @@ namespace NocInjector
     /// <summary>
     /// Container for registering and resolving Unity components by type.
     /// </summary>
-    public class ObjectContainer
+    public class ComponentContainer
     {
         private readonly GameObject _containerObject;
         private readonly Dictionary<Type, Component> _componentsContainer = new();
 
-        public ObjectContainer(GameObject gameObject)
+        public ComponentContainer(GameObject gameObject)
         {
             _containerObject = gameObject;
         }
@@ -24,17 +24,8 @@ namespace NocInjector
         /// </summary>
         public void Register(Type type, Component component)
         {
-            if (component is null)
-            {
-                Debug.LogError($"The {type.Name} component is null.");
+            if (HasRegisterError(component, type))
                 return;
-            }
-
-            if (component.gameObject != _containerObject)
-            {
-                Debug.LogError($"The {type.Name} component is not located on the {_containerObject.name} container that you are trying to add it to.");
-                return;
-            }
 
             if (!_componentsContainer.TryAdd(type, component)) 
                 Debug.LogError($"Failed to add {component.name} to container. Component already exists in the container.");
@@ -47,20 +38,8 @@ namespace NocInjector
         public void Register<T>(Component component) where T : Component
         {
             var type = typeof(T);
-            if (component is null)
-            {
-                Debug.LogError($"The {type.Name} component is null.");
-                return;
-            }
-
-            if (component.gameObject != _containerObject)
-            {
-                Debug.LogError($"The {type.Name} component is not located on the {_containerObject.name} container that you are trying to add it to.");
-                return;
-            }
-
-            if (!_componentsContainer.TryAdd(type, component)) 
-                Debug.LogError($"Failed to add {component.name} to container. Component already exists in the container.");
+            
+            Register(type, component);
         }
         
         /// <summary>
@@ -68,11 +47,8 @@ namespace NocInjector
         /// </summary>
         public Component Resolve(Type type)
         {
-            if (type.IsInterface)
-            {
-                Debug.LogError($"To get an instance by interface {type.Name}, use the ResolveByInterface method");
+            if (HasResolveError(type))
                 return null;
-            }
 
             if (_componentsContainer.TryGetValue(type, out var value))
             {
@@ -93,21 +69,7 @@ namespace NocInjector
         {
             var type = typeof(T);
 
-            if (type.IsInterface)
-            {
-                Debug.LogError($"To get an instance by interface {type.Name}, use the ResolveByInterface method");
-                return null;
-            }
-
-            if (_componentsContainer.TryGetValue(type, out var value))
-            {
-                if (value is not null) return (T)value;
-
-                _componentsContainer.Remove(type);
-                Debug.LogError($"Component of type {type.Name} is missing in the container.");
-            }
-            else if (type.IsInterface) return (T)_componentsContainer.FirstOrDefault(c => type.IsAssignableFrom(c.Key)).Value;
-            return null;
+            return (T)Resolve(type);
         }
         
         /// <summary>
@@ -122,11 +84,57 @@ namespace NocInjector
             }
             
             var realisation = _componentsContainer.FirstOrDefault(c =>
-                c.Key.IsDefined(typeof(RegisterByInterface), true) &&
-                c.Key.GetCustomAttribute<RegisterByInterface>().RealisationTag == realisationTag &&
-                c.Key.GetCustomAttribute<RegisterByInterface>().InterfaceType == interfaceType).Value;
+                c.Key.IsDefined(typeof(RegisterAsRealisation), true) &&
+                c.Key.GetCustomAttribute<RegisterAsRealisation>().RealisationTag == realisationTag &&
+                c.Key.GetCustomAttribute<RegisterAsRealisation>().InterfaceType == interfaceType).Value;
 
             return realisation;
+        }
+        
+        /// <summary>
+        /// Resolves a component instance by T interface
+        /// </summary>
+
+        public T ResolveByInterface<T>(string realisationTag) where T : class
+        {
+            var interfaceType = typeof(T);
+
+            return ResolveByInterface(interfaceType, realisationTag) as T;
+        }
+        
+
+        private bool HasRegisterError(Component component, Type type)
+        {
+            if (component is null)
+            {
+                Debug.LogError($"The {type.Name} component is null.");
+                return true;
+            }
+
+            if (type.IsInterface)
+            {
+                Debug.LogError($"Cannot register the {type.Name} interface in the ComponentContainer on {_containerObject.name}");
+                return true;
+            }
+
+            if (component.gameObject != _containerObject)
+            {
+                Debug.LogError($"The {type.Name} component is not located on the {_containerObject.name} container that you are trying to add it to.");
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool HasResolveError(Type type)
+        {
+            if (type.IsInterface)
+            {
+                Debug.LogError($"To get an instance by interface {type.Name}, use the ResolveByInterface method");
+                return true;
+            }
+
+            return false;
         }
         
         /// <summary>

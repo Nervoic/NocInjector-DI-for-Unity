@@ -17,7 +17,7 @@ public class MyService
 {
     
 }
-``
+```
 In this case, the service requires registration, as it is not a component. For more information, see below
 
 ## Registration
@@ -28,7 +28,7 @@ public class MyService
 {
     
 }
-``
+```
 In this example, we register the service as a Singleton in the context of the scene.
 
 ```csharp
@@ -52,14 +52,14 @@ In this example, we manually register the service in a separate class. This Inst
 ## Registration of interfaces
 Any types that can be requested as an interface implementation require registration as an interface implementation.
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Behaviour")]
+[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     
 }
 ```
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Service")]
+[RegisterAsRealisation(typeof(IBehaviour), "Service")]
 public class MyService : IBehaviour
 {
     
@@ -128,14 +128,14 @@ public class MyServiceInstaller : Installer
 ## Регистрация интерфейсов
 Любые типы, которые могут быть запрошены как реализация интерфейса, требуют регистрацию как реализация интерфейса.
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Behaviour")]
+[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     
 }
 ```
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Service")]
+[RegisterAsRealisation(typeof(IBehaviour), "Service")]
 public class MyService : IBehaviour
 {
     
@@ -145,5 +145,5 @@ public class MyService : IBehaviour
 
 
 ## Примечания
-- Атрибут Register в связке с атрибутом RegisterByInterface не работает у сервисов.
+- Атрибут Register в связке с атрибутом RegisterAsRealisation не работает у сервисов.
 - Нет необходимости использовать регистрацию для компонентов.

@@ -14,12 +14,12 @@ public class MyBehaviour : MonoBehaviour
 
 In this example, the `_service` field will be automatically filled in by the `MyService` instance if it is registered in the container.
 
-``csharp
+```csharp
 public class MyBehaviour : MonoBehaviour
-{
-[Inject] private MyBehaviour2 _behaviour
-}
-``
+    { 
+        [Inject] private MyBehaviour2 _behaviour
+    }
+```
 In this example, the `_behaviour` field will be automatically populated with an instance of `MyBehaviour2` if it is on the same GameObject.
 
 ## Manual injection
@@ -54,7 +54,7 @@ public class MyBehaviour : MonoBehaviour
 ## Interface injection
 To inject interfaces, we first need to register a component or service as an interface implementation. For more information about registration, see Register.md
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Behaviour")]
+[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     [SerializeField] private Context sceneContext;
@@ -72,7 +72,7 @@ After that, when requesting injection via the interface, specify the tag of the 
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [InjectByInterface("Behaviour")] private IBehaviour _behaviour
+    [InjectByRealisation("Behaviour")] private IBehaviour _behaviour
 }
 ```
 
@@ -141,7 +141,7 @@ public class MyBehaviour : MonoBehaviour
 ## Иньекция интерфейсов
 Для иньекции интерфейсов нам сначала необходимо зарегистрировать компонент или сервис как реализацию интерфейса. Подробнее про регистрацию см. в Register.md
 ```csharp
-[RegisterByInterface(typeof(IBehaviour), "Behaviour")]
+[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     [SerializeField] private Context sceneContext;
@@ -159,7 +159,7 @@ public class MyBehaviour : MonoBehaviour : IBehaviour
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [InjectByInterface("Behaviour")] private IBehaviour _behaviour
+    [InjectByRealisation("Behaviour")] private IBehaviour _behaviour
 }
 ```
 

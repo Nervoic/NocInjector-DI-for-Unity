@@ -23,10 +23,10 @@ namespace NocInjector
                 return null;
             }
 
-            var injectObject = gameObject.GetComponent<InjectObject>();
+            var injectObject = gameObject.GetComponent<ObjectContext>();
             
             if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            return injectObject.Container.Resolve<T>();
+            return injectObject.ComponentContainer.Resolve<T>();
         }
         
         /// <summary>
@@ -44,10 +44,10 @@ namespace NocInjector
                 Debug.LogError($"{typeof(T).Name} is not an interface. To get a component from an object container, use the ResolveComponent method");
                 return null;
             }
-            var injectObject = gameObject.GetComponent<InjectObject>();
+            var injectObject = gameObject.GetComponent<ObjectContext>();
             
             if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            return injectObject.Container.ResolveByInterface(typeof(T), realisationTag) as T;
+            return injectObject.ComponentContainer.ResolveByInterface(typeof(T), realisationTag) as T;
         }
 
         /// <summary>
@@ -68,9 +68,9 @@ namespace NocInjector
             var realisations = Object.FindObjectsByType<Component>(FindObjectsSortMode.None).Where(o => interfaceType.IsAssignableFrom(o.GetType()));
 
             return realisations.FirstOrDefault(r =>
-                r.GetType().IsDefined(typeof(RegisterByInterface), true) &&
-                r.GetType().GetCustomAttribute<RegisterByInterface>().InterfaceType == interfaceType &&
-                r.GetType().GetCustomAttribute<RegisterByInterface>().RealisationTag == realisationTag) as T;
+                r.GetType().IsDefined(typeof(RegisterAsRealisation), true) &&
+                r.GetType().GetCustomAttribute<RegisterAsRealisation>().InterfaceType == interfaceType &&
+                r.GetType().GetCustomAttribute<RegisterAsRealisation>().RealisationTag == realisationTag) as T;
         }
         
         /// <summary>
@@ -90,12 +90,12 @@ namespace NocInjector
             
             Component component = gameObject.AddComponent<T>();
 
-            var injectObject = gameObject.GetComponent<InjectObject>();
+            var injectObject = gameObject.GetComponent<ObjectContext>();
             
             if (injectObject is null) throw new Exception($"Failed to add component of type '{typeof(T).Name}' to GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
             
-            injectObject.Container.Register(typeof(Component), component);
-            return injectObject.Container.Resolve<T>();
+            injectObject.ComponentContainer.Register(typeof(Component), component);
+            return injectObject.ComponentContainer.Resolve<T>();
         }
     }
 }

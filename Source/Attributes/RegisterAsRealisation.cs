@@ -7,7 +7,7 @@ namespace NocInjector
     /// Mandatory manual installation of this class in the context
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class RegisterByInterface : Attribute
+    public class RegisterAsRealisation : Attribute
     {
         /// <summary>
         /// The interface that this class implements
@@ -18,7 +18,7 @@ namespace NocInjector
         /// Tag for implementation
         /// </summary>
         public string RealisationTag { get; }
-        public RegisterByInterface(Type interfaceType, string realisationTag)
+        public RegisterAsRealisation(Type interfaceType, string realisationTag)
         {
             InterfaceType = interfaceType;
             RealisationTag = realisationTag;

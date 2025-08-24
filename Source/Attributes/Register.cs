@@ -17,8 +17,8 @@ namespace NocInjector
         /// <summary>
         /// Gets the context lifetime in which the service will be available (Scene or Project).
         /// </summary>
-        public ContextLifetime Context { get; }
-        public Register(ServiceLifetime lifetime, ContextLifetime context)
+        public RegisterToContextLifetime Context { get; }
+        public Register(ServiceLifetime lifetime, RegisterToContextLifetime context)
         {
             Lifetime = lifetime;
             Context = context;

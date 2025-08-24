@@ -8,15 +8,22 @@ namespace NocInjector
 {
     public class ServiceInjector
     {
-        private Context[] _contexts;
+        private GameContext[] _contexts;
         public void Inject(object obj, MemberInfo injectableMember)
         {
             try
             {
                 var typeToInjection = injectableMember.GetMemberType();
+                
+                if (typeToInjection.IsArray)
+                {
+                    Debug.LogError($"Cannot inject an array into {injectableMember.Name}, component {obj.GetType().Name}");
+                    return;
+                }
+                
                 if (typeToInjection.IsSubclassOf(typeof(Component)))
                 {
-                    Debug.LogError("Inject component to service error.");
+                    Debug.LogError($"Inject component {typeToInjection.Name} on {obj.GetType().Name} as service error.");
                     return;
                 }
                 var currentContext = SelectContext(typeToInjection);
@@ -26,7 +33,7 @@ namespace NocInjector
                     InjectAsInterface(injectableMember, currentContext, obj);
                     return;
                 }
-
+                
                 if (currentContext is not null) injectableMember.SetValue(obj, currentContext.Container.Resolve(typeToInjection));
                 else
                 {
@@ -44,45 +51,45 @@ namespace NocInjector
             }
         }
 
-        private void InjectAsInterface(MemberInfo injectableMember, Context currentContext, object obj)
+        private void InjectAsInterface(MemberInfo injectableMember, GameContext currentGameContext, object obj)
         {
             var typeToInjection = injectableMember.GetMemberType();
-            var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByInterface>();
+            var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByRealisation>();
 
             var realisationTag = injectByInterfaceAttr.RealisationTag;
 
             foreach (var context in _contexts)
             {
                 if (context.Container.ResolveByInterface(typeToInjection, realisationTag) is not null) 
-                    currentContext = context;
+                    currentGameContext = context;
             }
 
-            if (currentContext is null)
+            if (currentGameContext is null)
             {
                 Debug.LogError($"Please register realisations to {typeToInjection.Name} interface with installers");
                 return;
             }
 
-            var realisation = currentContext.Container.ResolveByInterface(typeToInjection, realisationTag);
+            var realisation = currentGameContext.Container.ResolveByInterface(typeToInjection, realisationTag);
             if (!typeToInjection.IsAssignableFrom(realisation.GetType())) 
                 Debug.LogError($"{realisation.GetType().Name} it is not inherited from the {typeToInjection.Name} interface.");
                     
             injectableMember.SetValue(obj, realisation);
         }
 
-        private Context SelectContext(Type typeToInjection)
+        private GameContext SelectContext(Type typeToInjection)
         {
-            _contexts ??= Object.FindObjectsByType<Context>(FindObjectsSortMode.None);
+            _contexts ??= Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None);
 
             if (_contexts.Length == 0)
             {
-                Debug.LogError("No Context found in the scene. Please add a Context before attempting to inject dependencies.");
+                Debug.LogError("No GameContext found in the scene. Please add a GameContext before attempting to inject dependencies.");
                 return null;
             }
 
             foreach (var context in _contexts)
             {
-                if (!context.Installed) context.Install();
+                context.TryInstall();
                     
                 if (context.Container.Has(typeToInjection))
                 {
@@ -94,7 +101,7 @@ namespace NocInjector
             return null;
         }
 
-        private Context RegisterService(Type typeToInjection)
+        private GameContext RegisterService(Type typeToInjection)
         {
             if (!typeToInjection.IsDefined(typeof(Register)))
             {
@@ -106,8 +113,15 @@ namespace NocInjector
 
             var lifetime = registerAttr.Lifetime;
             var contextLifetime = registerAttr.Context;
+            ContextLifetime searchContextLifetime = ContextLifetime.Project;
 
-            var context = GetContextByLifetime(contextLifetime, _contexts);
+            if (contextLifetime is RegisterToContextLifetime.Project)
+                searchContextLifetime = ContextLifetime.Project;
+            else if(contextLifetime is RegisterToContextLifetime.Scene)
+                searchContextLifetime = ContextLifetime.Scene;
+            else
+                Debug.LogError($"Cannot register the {nameof(typeToInjection)} service in the GameContext, as it has a registration scope in the ObjectContext");
+            var context = GetContextByLifetime(searchContextLifetime, _contexts);
             
             if (context is null) throw new Exception($"Failed to register service type '{typeToInjection.Name}': no matching Context found in the scene for the specified lifetime.");
 
@@ -116,7 +130,7 @@ namespace NocInjector
             return context;
         }
 
-        private Context GetContextByLifetime(ContextLifetime lifetime, Context[] contexts)
+        private GameContext GetContextByLifetime(ContextLifetime lifetime, GameContext[] contexts)
         {
             return contexts.First(c => c.Lifetime == lifetime);
         }

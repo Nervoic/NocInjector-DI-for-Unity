@@ -6,14 +6,14 @@ namespace NocInjector
     /// It implements an object as an interface implementation using the tag. Services require mandatory type registration in the context
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class InjectByInterface : Attribute
+    public class InjectByRealisation : Attribute
     {
         /// <summary>
         /// The implementation tag that you want to implement
         /// </summary>
         public string RealisationTag { get; }
         
-        public InjectByInterface(string realisationTag)
+        public InjectByRealisation(string realisationTag)
         {
             RealisationTag = realisationTag;
         }
