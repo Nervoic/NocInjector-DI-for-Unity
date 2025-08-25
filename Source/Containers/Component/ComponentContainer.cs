@@ -54,6 +54,9 @@ namespace NocInjector
                 _currentServiceType = currentServiceType;
             }
             
+            /// <summary>
+            /// Registers the type as an interface implementation.
+            /// </summary>
             public void AsImplementation(Type interfaceType, string realisationTag)
             {
                 if (!interfaceType.IsInterface)
@@ -70,6 +73,10 @@ namespace NocInjector
                 if (!_container._interfaceRealisations.TryAdd(realisationTag, _currentServiceType))
                     Debug.LogWarning($"The {realisationTag} realisation tag is already registered in the container.");
             }
+            
+            /// <summary>
+            /// Registers the type as an interface implementation.
+            /// </summary>
             
             public void AsImplementation<T>(string realisationTag)
             {
