@@ -16,9 +16,9 @@ In this example, the `_service` field will be automatically filled in by the `My
 
 ```csharp
 public class MyBehaviour : MonoBehaviour
-    { 
-        [Inject] private MyBehaviour2 _behaviour
-    }
+{
+[Inject] private MyBehaviour2 _behaviour
+}
 ```
 In this example, the `_behaviour` field will be automatically populated with an instance of `MyBehaviour2` if it is on the same GameObject.
 
@@ -27,7 +27,7 @@ To inject types that are not components, we need to get the context from which w
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [SerializeField] private Context sceneContext;
+    [SerializeField] private GameContext sceneContext;
     
     private MyService _service
     
@@ -46,15 +46,15 @@ public class MyBehaviour : MonoBehaviour
     
     public void Start() 
     {
-        _behaviour = GetComponent<InjectObject>.Container.Resolve<MyBehaviour2>();
+        _behaviour = gameObject.GetContext.ComponentContainer..Resolve<MyBehaviour2>();
     }
 }
 ```
 
 ## Interface injection
-To inject interfaces, we first need to register a component or service as an interface implementation. For more information about registration, see Register.md
+To inject interfaces, we first need to register a component or service as an interface implementation. For more information about registration, see Register.md . Below is an example of registering a component as an interface implementation.
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
+[RegisterComponentAsImplementation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     [SerializeField] private Context sceneContext;
@@ -72,16 +72,16 @@ After that, when requesting injection via the interface, specify the tag of the 
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [InjectByRealisation("Behaviour")] private IBehaviour _behaviour
+    [InjectImplementation("Behaviour")] private IBehaviour _behaviour
 }
 ```
 
 
 ## Notes
 - The attribute only works with fields and properties
-- The attribute does not work for interfaces. To embed the interface, use the InjectByInterface attribute.
+- The attribute does not work for interfaces. To implement the interface, use the InjectImplementation attribute.
 - Injection of all dependencies on an object takes place in Awake
-- In non-component types, injection occurs after you request a dependency. NocInjector also supports recursive injection.
+- In non-component types, injection occurs after you request a dependency. NocInjector also supports recursive injection.st a dependency. NocInjector also supports recursive injection.
 
 
 ---
@@ -114,7 +114,7 @@ public class MyBehaviour : MonoBehaviour
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [SerializeField] private Context sceneContext;
+    [SerializeField] private GameContext sceneContext;
     
     private MyService _service
     
@@ -133,15 +133,15 @@ public class MyBehaviour : MonoBehaviour
     
     public void Start() 
     {
-        _behaviour = GetComponent<InjectObject>.Container.Resolve<MyBehaviour2>();
+        _behaviour = gameObject.GetContext.ComponentContainer..Resolve<MyBehaviour2>();
     }
 }
 ```
 
 ## Иньекция интерфейсов
-Для иньекции интерфейсов нам сначала необходимо зарегистрировать компонент или сервис как реализацию интерфейса. Подробнее про регистрацию см. в Register.md
+Для иньекции интерфейсов нам сначала необходимо зарегистрировать компонент или сервис как реализацию интерфейса. Подробнее про регистрацию см. в Register.md. Ниже пример регистрации компонента как реализации интерфейса.
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
+[RegisterComponentAsImplementation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     [SerializeField] private Context sceneContext;
@@ -159,13 +159,13 @@ public class MyBehaviour : MonoBehaviour : IBehaviour
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [InjectByRealisation("Behaviour")] private IBehaviour _behaviour
+    [InjectImplementation("Behaviour")] private IBehaviour _behaviour
 }
 ```
 
 
 ## Примечания
 - Атрибут работает только с полями и свойствами
-- Атрибут не работает для интерфейсов. Для внедрения интерфейса используйте атрибут InjectByInterface
+- Атрибут не работает для интерфейсов. Для внедрения интерфейса используйте атрибут InjectImplementation
 - Инъекция всех зависимостей на обьекте происходит в Awake
 - В типы, не являющиеся компонентами иньекция происходит после того, как вы запросите зависимость. NocInjector также поддерживает рекурсивную иньекцию.

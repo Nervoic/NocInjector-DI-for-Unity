@@ -22,14 +22,6 @@ In this case, the service requires registration, as it is not a component. For m
 
 ## Registration
 Only those types that are not components require registration. Components require registration only if they implement an interface.
-```csharp
-[Register(ServiceLifeTime.Singleton, ContextLifeTime.Scene)]
-public class MyService
-{
-    
-}
-```
-In this example, we register the service as a Singleton in the context of the scene.
 
 ```csharp
 public class MyService : MonoBehaviour
@@ -52,25 +44,33 @@ In this example, we manually register the service in a separate class. This Inst
 ## Registration of interfaces
 Any types that can be requested as an interface implementation require registration as an interface implementation.
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
+[RegisterComponentAsImplementation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     
 }
 ```
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Service")]
 public class MyService : IBehaviour
 {
     
 }
 ```
-In these examples, we register the component and the service as an interface implementation. You can get the implementation by tag using the [InjectByInterface] attribute. For more information, see Inject.md . The difference is that for services, if they can be used as an interface implementation and registered in this way, you will not be able to use the Register attribute for automatic registration. They need to be registered manually.
+```csharp
+public class MyServiceInstaller : Installer
+{
+    public override void Install(ServiceContainer container) 
+    {
+        container.Register<MyService>(ServiceLifeTime.Singleton).AsRealisation<IBehaviour>("Service")
+    }
+}
+```
+In these examples, we register the component and the service as an interface implementation. You can get the implementation by tag using the [InjectImplementation] attribute. For more information, see Inject.md The [RegisterComponentAsImplementation] attribute only works for registering components as an interface implementation, services need to be registered completely manually.
 
 
 ## Notes
-- The Register attribute in conjunction with the RegisterByInterface attribute does not work for services.
-- There is no need to use registration for components.
+- There is no need for Installers for components.
+- The [RegisterCoponentAsImplementation] attribute only works for components.
 
 
 ---
@@ -98,14 +98,6 @@ public class MyService
 
 ## Регистрация
 Регистрацию требуют только те типы, которые не являются компонентами. Компоненты требует регистрацию только, если реализуют интерфейс.
-```csharp
-[Register(ServiceLifeTime.Singleton, ContextLifeTime.Scene)]
-public class MyService
-{
-    
-}
-```
-В этом примере мы регистрируем сервис как Singleton в контексте сцены.
 
 ```csharp
 public class MyService : MonoBehaviour
@@ -128,22 +120,30 @@ public class MyServiceInstaller : Installer
 ## Регистрация интерфейсов
 Любые типы, которые могут быть запрошены как реализация интерфейса, требуют регистрацию как реализация интерфейса.
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Behaviour")]
+[RegisterComponentAsImplementation(typeof(IBehaviour), "Behaviour")]
 public class MyBehaviour : MonoBehaviour : IBehaviour
 {
     
 }
 ```
 ```csharp
-[RegisterAsRealisation(typeof(IBehaviour), "Service")]
 public class MyService : IBehaviour
 {
     
 }
 ```
-В данных примерах мы регистрируем компонент и сервис как реализацию интерфейса. Получить реализацию можно будет по тегу с помощью атрибута [InjectByInterface], подробнее см. в Inject.md. Отличия в том, что для сервисов, если они могут быть использованы как реализация интерфейса и зарегистрированы таким образом, не получится использовать атрибут Register для автоматической регистрации. Их нужно регистрировать вручную.
+```csharp
+public class MyServiceInstaller : Installer
+{
+    public override void Install(ServiceContainer container) 
+    {
+        container.Register<MyService>(ServiceLifeTime.Singleton).AsRealisation<IBehaviour>("Service")
+    }
+}
+```
+В данных примерах мы регистрируем компонент и сервис как реализацию интерфейса. Получить реализацию можно будет по тегу с помощью атрибута [InjectImplementation], подробнее см. в Inject.md. Атрибут [RegisterComponentAsImplementation] работает только для регистрации компонентов как реализацию интерфейса, сервисы нужно регистрировать полностью вручную.
 
 
 ## Примечания
-- Атрибут Register в связке с атрибутом RegisterAsRealisation не работает у сервисов.
-- Нет необходимости использовать регистрацию для компонентов.
+- Нет необходимости Installer-ы для компонентов.
+- Атрибут [RegisterCoponentAsImplementation] работает только для компонентов.

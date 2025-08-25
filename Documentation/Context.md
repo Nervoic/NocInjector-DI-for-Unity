@@ -25,6 +25,8 @@ In this example, we access the context, which we set manually through the inspec
 
 ObjectContext is a key component of dependency injection. It is added manually to each object on the scene that uses dependency injection. It stores a container of all the components of that object, as well as a container of services registered with that object, which can also be registered using Installers.
 
+ContextManager is the main object for installing containers. Without it, dependency injection will not work on the stage.
+
 ## Notes
 - There are 3 types of context - for object, for the stage and for the project.
 - The container from each context is independent of each other.
@@ -54,9 +56,11 @@ public class MyBehaviour : MonoBehaviour
     }
 }
 ```
-В этом примере мы обращаемся к контексту, который устанавливаем вручную через инспектор, или можем найти его на сцене через FindAnyObjectByType, обращаемся к его контейнеру и получаем зависимость MyService, подробнее про регистрацию см. в Register.md.
+В этом примере мы обращаемся к контексту, который устанавливаем вручную через инспектор, обращаемся к его контейнеру и получаем зависимость MyService, подробнее про регистрацию см. в Register.md.
 
 ObjectContext - ключевой компонент внедрения зависимостей. Он добавляется вручную на каждый обьект на сцене, использующий внедрение зависимостей. Он хранит в себе контейнер всех компонентов этого обьекта, и контейнер зарегистрированных на данный обьект сервисов, которые также можно регистрировать с помощью Installer-ов.
+
+ContextManager - главный обьект инсталляции контейнеров. Без него внедрение зависимостей на сцене работать не будет.
 
 ## Примечания
 - Существует 3 вида контекста - на обьект, на сцену и на проект.
