@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace NocInjector
 {
@@ -7,7 +8,7 @@ namespace NocInjector
     /// Mandatory manual installation of this class in the context
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class RegisterAsRealisation : Attribute
+    public class RegisterComponentAsImplementation : Attribute
     {
         /// <summary>
         /// The interface that this class implements
@@ -18,7 +19,7 @@ namespace NocInjector
         /// Tag for implementation
         /// </summary>
         public string RealisationTag { get; }
-        public RegisterAsRealisation(Type interfaceType, string realisationTag)
+        public RegisterComponentAsImplementation(Type interfaceType, string realisationTag)
         {
             InterfaceType = interfaceType;
             RealisationTag = realisationTag;

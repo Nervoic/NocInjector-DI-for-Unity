@@ -10,6 +10,7 @@ namespace NocInjector
     {
         private const string SceneContextPath = "Assets/Plugins/NocInjector/Prefabs/SceneContext.prefab";
         private const string ProjectContextPath = "Assets/Plugins/NocInjector/Prefabs/ProjectContext.prefab";
+        private const string ContextManagerPath = "Assets/Plugins/NocInjector/Prefabs/ContextManager.prefab";
         
         /// <summary>
         /// Creates a SceneContext prefab instance in the current scene.
@@ -40,6 +41,22 @@ namespace NocInjector
                 GameObject projectContext = (GameObject)PrefabUtility.InstantiatePrefab(projectContextPrefab);
                 
                 Undo.RegisterCreatedObjectUndo(projectContext, "Created ProjectContext");
+            }
+        }
+        
+        /// <summary>
+        /// Creates a ContextManager prefab instance in the current scene.
+        /// </summary>
+        [MenuItem("Tools/NocInjector/Create ContextManager")]
+        private static void CreateContextManager()
+        {
+            GameObject contextManagerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ContextManagerPath);
+
+            if (contextManagerPrefab is not null)
+            {
+                GameObject contextManager = (GameObject)PrefabUtility.InstantiatePrefab(contextManagerPrefab);
+                
+                Undo.RegisterCreatedObjectUndo(contextManager, "Created ContextManager");
             }
         }
     }

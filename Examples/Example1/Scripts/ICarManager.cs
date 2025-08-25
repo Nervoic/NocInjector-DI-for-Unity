@@ -1,7 +1,9 @@
-using NocInjector;
-using UnityEngine;
 
-public interface ICarManager
+
+namespace NocInjector
 {
-    public void CreateCar(ServiceContainer container);
+    public interface ICarManager
+    {
+        public void CreateCar(ServiceContainer container);
+    }
 }

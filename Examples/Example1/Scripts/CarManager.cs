@@ -1,13 +1,11 @@
 using NocInjector;
-using UnityEngine;
 
-[RegisterAsRealisation(typeof(ICarManager), "CarManager")]
-public class CarManager : ICarManager
-{
-    private Car _car;
-
-    public void CreateCar(ServiceContainer container)
+    public class CarManager : ICarManager
     {
-        _car = container.Resolve<Car>();
+        private Car _car;
+
+        public void CreateCar(ServiceContainer container)
+        {
+            _car = container.Resolve<Car>();
+        }
     }
-}

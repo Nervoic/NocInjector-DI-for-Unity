@@ -35,7 +35,7 @@ namespace NocInjector
             {
                 Container = new ServiceContainer();
 
-                foreach (var installer in installers.Where(i => i is not null)) 
+                foreach (var installer in serviceInstallers.Where(i => i is not null)) 
                     installer.Install(Container);
             }
             catch (Exception e)

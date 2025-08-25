@@ -13,61 +13,100 @@ namespace NocInjector
     {
         private readonly Dictionary<Type, ServiceLifetime> _servicesContainer = new();
         private readonly Dictionary<Type, object> _singletonContainer = new();
+        private readonly Dictionary<string, Type> _interfaceRealisations = new();
 
         private ServiceInjector _currentInjector;
         
         /// <summary>
         /// Registers a service type with the specified lifetime.
         /// </summary>
-        public void Register(Type type, ServiceLifetime lifetime)
+        public ContainerRegister Register(Type typeToRegister, ServiceLifetime lifetime)
         {
-            if (HasRegisterError(type))
-                return;
+            if (HasRegisterError(typeToRegister))
+                return null;
             
-            if (!_servicesContainer.TryAdd(type, lifetime))
-                Debug.LogWarning($"The {type.Name} service is already registered in the container.");
+            if (!_servicesContainer.TryAdd(typeToRegister, lifetime)) 
+                Debug.LogWarning($"The {typeToRegister.Name} service is already registered in the container.");
+            
+            return new ContainerRegister(this, typeToRegister);
         }
         
         /// <summary>
         /// Registers a service T type with the specified lifetime.
         /// </summary>
-        public void Register<T>(ServiceLifetime lifetime)
+        public ContainerRegister Register<T>(ServiceLifetime lifetime)
         {
             var type = typeof(T);
-            Register(type, lifetime);
+            return Register(type, lifetime);
+        }
+
+        public class ContainerRegister
+        {
+            private readonly ServiceContainer _container;
+            private readonly Type _currentServiceType;
+
+            public ContainerRegister(ServiceContainer container, Type currentServiceType)
+            {
+                _container = container;
+                _currentServiceType = currentServiceType;
+            }
+            
+            public void AsImplementation(Type interfaceType, string realisationTag)
+            {
+                if (!interfaceType.IsInterface)
+                {
+                    Debug.LogError($"You are trying to register {_currentServiceType.Name} as an implementation of {interfaceType.Name}, but {interfaceType.Name} is not an interface.");
+                    return;
+                }
+
+                if (!interfaceType.IsAssignableFrom(_currentServiceType))
+                {
+                    Debug.LogError($"{_currentServiceType.Name} service does not implement the {interfaceType.Name} interface, and cannot be registered.");
+                }
+                
+                if (!_container._interfaceRealisations.TryAdd(realisationTag, _currentServiceType))
+                    Debug.LogWarning($"The {realisationTag} realisation tag is already registered in the container.");
+            }
+            
+            public void AsImplementation<T>(string realisationTag)
+            {
+                var interfaceType = typeof(T);
+                
+                AsImplementation(interfaceType, realisationTag);
+            }
         }
 
         /// <summary>
         /// Resolves an instance of the specified service type.
         /// </summary>
-        public object Resolve(Type type)
+        public object Resolve(Type serviceToResolve)
         {
             try
             {
-                if (_servicesContainer.TryGetValue(type, out var lifetime))
+                if (_servicesContainer.TryGetValue(serviceToResolve, out var lifetime))
                 {
-                    object obj;
+                    object instance;
                     
                     switch (lifetime)
                     {
                         case ServiceLifetime.Singleton:
-                            if (_singletonContainer.TryGetValue(type, out var value)) return value;
-                            obj = Activator.CreateInstance(type);
-                            _singletonContainer.TryAdd(type, obj);
+                            if (_singletonContainer.TryGetValue(serviceToResolve, out var value)) return value;
+                            instance = Activator.CreateInstance(serviceToResolve);
+                            _singletonContainer.TryAdd(serviceToResolve, instance);
                             break;
                         case ServiceLifetime.Transient:
-                            obj = Activator.CreateInstance(type);
+                            instance = Activator.CreateInstance(serviceToResolve);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(lifetime), $"ServiceLifetime value '{(int)lifetime}' is not supported. Please use a valid ServiceLifetime enum value.");
                     }
-                    InjectToCreatedObject(obj);
-                    return obj;
+                    InjectToCreatedObject(instance);
+                    return instance;
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error while resolving service of type '{type.FullName}': {e.Message}");
+                Debug.LogError($"Error while resolving service of type '{serviceToResolve.FullName}': {e.Message}");
             }
 
             return null;
@@ -79,37 +118,27 @@ namespace NocInjector
 
         public T Resolve<T>() where T : class
         {
-            var type = typeof(T);
+            var serviceToResolve = typeof(T);
 
-            return (T)Resolve(type);
+            return (T)Resolve(serviceToResolve);
         }
-        
+
         /// <summary>
         /// Resolves a realisation of this interface by tag
         /// </summary>
-        
-        public object ResolveByInterface(Type interfaceType, string realisationTag)
+
+        public object ResolveImplementation(string realisationTag)
         {
-            if (!interfaceType.IsInterface) throw new ArgumentException($"{interfaceType.Name} is not interface.");
-
-            var realisationType = _servicesContainer.FirstOrDefault(s =>
-                s.Key.IsDefined(typeof(RegisterAsRealisation)) &&
-                s.Key.GetCustomAttribute<RegisterAsRealisation>().InterfaceType == interfaceType &&
-                s.Key.GetCustomAttribute<RegisterAsRealisation>().RealisationTag == realisationTag).Key;
-
-            if (realisationType is not null) return Resolve(realisationType);
-            return null;
+            return _interfaceRealisations.TryGetValue(realisationTag, out var realisationType) ? Resolve(realisationType) : null;
         }
         
         /// <summary>
         /// Resolves a realisation of T interface by tag
         /// </summary>
         
-        public T ResolveByInterface<T>(string realisationTag) where T : class
+        public T ResolveImplementation<T>(string realisationTag) where T : class
         {
-            var interfaceType = typeof(T);
-            
-            return (T)ResolveByInterface(interfaceType, realisationTag);
+            return (T)ResolveImplementation(realisationTag);
         }
 
         private void InjectToCreatedObject(object obj)
@@ -117,21 +146,21 @@ namespace NocInjector
             _currentInjector ??= new ServiceInjector();
             foreach (var member in obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject), true)))
             {
-                _currentInjector.Inject(obj, member);
+                _currentInjector.InjectToField(obj, member);
             }
         }
 
-        private bool HasRegisterError(Type type)
+        private bool HasRegisterError(Type typeToRegister)
         {
-            if (type.IsSubclassOf(typeof(Component)))
+            if (typeToRegister.IsSubclassOf(typeof(Component)))
             {
-                Debug.LogError($"The {type.Name} component cannot be added to the service container.");
+                Debug.LogError($"The {typeToRegister.Name} component cannot be added to the service container.");
                 return true;
             }
 
-            if (type.IsInterface)
+            if (typeToRegister.IsInterface)
             {
-                Debug.LogError($"Cannot register the {type.Name} interface in the services container.");
+                Debug.LogError($"Cannot register the {typeToRegister.Name} interface in the services container.");
                 return true;
             }
 

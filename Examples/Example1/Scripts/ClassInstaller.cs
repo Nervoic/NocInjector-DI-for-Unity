@@ -1,10 +1,13 @@
-using NocInjector;
 
-public class ClassInstaller : Installer
+
+namespace NocInjector
 {
-    public override void Install(ServiceContainer container)
+    public class ClassInstaller : Installer
     {
-        container.Register<Car>(ServiceLifetime.Transient);
-        container.Register<CarManager>(ServiceLifetime.Singleton);
+        public override void Install(ServiceContainer container)
+        {
+            container.Register<CarManager>(ServiceLifetime.Singleton).AsImplementation<ICarManager>("CarManager");
+            container.Register<Car>(ServiceLifetime.Transient);
+        }
     }
 }

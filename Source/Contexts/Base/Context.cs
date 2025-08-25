@@ -5,7 +5,7 @@ namespace NocInjector
 {
     public abstract class Context : MonoBehaviour
     {
-        [SerializeField] protected Installer[] installers;
+        [SerializeField] protected Installer[] serviceInstallers;
         
         /// <summary>
         /// Indicates whether the context has been installed.
@@ -16,11 +16,5 @@ namespace NocInjector
         /// Installs all services using the provided installers.
         /// </summary>
         public abstract void Install();
-
-        public void TryInstall()
-        {
-            if (!Installed)
-                Install();
-        }
     }
 }

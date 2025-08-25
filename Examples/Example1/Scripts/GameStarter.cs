@@ -1,13 +1,20 @@
 
-using NocInjector;
 using UnityEngine;
 
-public class GameStarter : MonoBehaviour
+namespace NocInjector
 {
-    [InjectByRealisation("MainLogger")] private IGameLogger _logger;
-
-    private void Start()
+    public class GameStarter : MonoBehaviour
     {
-        _logger.Log("Hello World");
+        [InjectImplementation("MainLogger")] private IGameLogger _logger;
+
+        private void Start()
+        {
+            _logger.Log("Hello World");
+        }
+
+        public void Find()
+        {
+            gameObject.GetContext().ComponentContainer.Resolve<GameLoggerStep>().Log("Step logger");
+        }
     }
 }

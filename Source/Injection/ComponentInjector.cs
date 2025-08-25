@@ -6,11 +6,11 @@ namespace NocInjector
 {
     public class ComponentInjector
     {
-        public bool Inject(Component component, MemberInfo injectableMember, ObjectContext context)
+        public bool InjectToComponent(Component component, MemberInfo injectableMember, ObjectContext context)
         {
             var typeToInjection = injectableMember.GetMemberType();
             var injected = false;
-            
+
             if (typeToInjection.IsSubclassOf(typeof(Component)))
                 injected = InjectAsComponent(injectableMember, component, context.ComponentContainer);
             else if (typeToInjection.IsInterface)
@@ -24,9 +24,9 @@ namespace NocInjector
         private bool InjectAsComponent(MemberInfo injectableMember, Component component, ComponentContainer container)
         {
             var typeToInjection = injectableMember.GetMemberType();
-            if (injectableMember.IsDefined(typeof(InjectByRealisation)))
+            if (injectableMember.IsDefined(typeof(InjectImplementation)))
             {
-                Debug.LogError($"Inject by interface on {component.name}, injection - {typeToInjection.Name} works only for interfaces");
+                Debug.LogError($"Inject by interface on {component.name}, injection to {typeToInjection.Name} works only for interfaces");
                 return false;
             }
 
@@ -35,15 +35,12 @@ namespace NocInjector
                 Debug.LogError($"Cannot inject an array into {injectableMember.Name}, component {component.GetType().Name}");
                 return false;
             }
-                            
-            if (injectableMember.GetType().IsDefined(typeof(Register))) Debug.LogWarning($"Component {component.name} does not register.");
+            
             var componentToInjection = container.Resolve(typeToInjection);
                             
             injectableMember.SetValue(component, componentToInjection);
             if (componentToInjection is null)
-            {
                 Debug.LogError($"You forgot to add the {typeToInjection.Name} component to {component.gameObject.name}.");
-            }
 
 
             return true;
@@ -51,35 +48,27 @@ namespace NocInjector
 
         private bool InjectAsInterface(MemberInfo injectableMember, Component component, ComponentContainer container)
         {
-            var typeToInjection = injectableMember.GetMemberType();
+            var interfaceType = injectableMember.GetMemberType();
             if (injectableMember.IsDefined(typeof(Inject)))
             {
-                Debug.LogError($"Inject attribute on {component.name}, injection - {typeToInjection.Name} works only for fields and properties");
+                Debug.LogError($"{nameof(Inject)} attribute on {component.name}, injection - {interfaceType.Name} works only for fields and properties");
                 return false;
             }
             
-            if (typeToInjection.IsArray)
+            if (interfaceType.IsArray)
             {
                 Debug.LogError($"Cannot inject an array into {injectableMember.Name}, component {component.GetType().Name}");
                 return false;
             }
 
-            var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByRealisation>();
-            var realisationTag = injectByInterfaceAttr.RealisationTag;
-            var realisation = container.ResolveByInterface(typeToInjection, realisationTag);
-
-            if (realisation is not null)
-            {
-                if (!typeToInjection.IsAssignableFrom(realisation.GetType()))
-                {
-                    Debug.LogError($"{realisation.GetType().Name} it is not inherited from the {typeToInjection.Name} interface.");
-                    return false;
-                }
-            }
+            var injectImplementationAttr = injectableMember.GetCustomAttribute<InjectImplementation>();
+            var implementationTag = injectImplementationAttr.ImplementationTag;
             
-            injectableMember.SetValue(component, realisation);
+            var implementation = container.ResolveImplementation(implementationTag);
+            
+            injectableMember.SetValue(component, implementation);
 
-            return realisation is not null;
+            return implementation is not null;
 
         }
 
@@ -92,50 +81,30 @@ namespace NocInjector
                 Debug.LogError($"Cannot inject an array into {injectableMember.Name}, component {component.GetType().Name}");
                 return false;
             }
-            
+
             if (typeToInjection.IsInterface)
-            {
-                var injectByInterfaceAttr = injectableMember.GetCustomAttribute<InjectByRealisation>();
-                var realisationTag = injectByInterfaceAttr.RealisationTag;
-                var realisation = container.ResolveByInterface(typeToInjection, realisationTag);
-
-                if (realisation is not null)
-                {
-                    if (!typeToInjection.IsAssignableFrom(realisation.GetType()))
-                    {
-                        Debug.LogError($"{realisation.GetType().Name} it is not inherited from the {typeToInjection.Name} interface.");
-                        return false;
-                    }
-                }
-                
-                injectableMember.SetValue(component, realisation);
-
-                return realisation is not null;
-            }
+                return InjectServiceAsInterface(injectableMember, component, container);
 
             if (!container.Has(typeToInjection))
-            {
-                if (typeToInjection.IsDefined(typeof(Register)))
-                {
-                    var registerAttr = typeToInjection.GetCustomAttribute<Register>();
-
-                    var serviceLifeTime = registerAttr.Lifetime;
-                    var contextLifeTime = registerAttr.Context;
-
-                    if (contextLifeTime is not RegisterToContextLifetime.Object)
-                        return false;
-
-                    container.Register(typeToInjection, serviceLifeTime);
-                }
-                else 
-                    return false;
-            }
+                return false;
 
             var serviceToInjection = container.Resolve(typeToInjection);
             injectableMember.SetValue(component, serviceToInjection);
 
             return serviceToInjection is not null;
 
+        }
+
+        private bool InjectServiceAsInterface(MemberInfo injectableMember, Component component, ServiceContainer container)
+        {
+            var injectAsImplementationAttr = injectableMember.GetCustomAttribute<InjectImplementation>();
+            var implementationTag = injectAsImplementationAttr.ImplementationTag;
+            
+            var implementation = container.ResolveImplementation(implementationTag);
+                
+            injectableMember.SetValue(component, implementation);
+
+            return implementation is not null;
         }
     }
 }

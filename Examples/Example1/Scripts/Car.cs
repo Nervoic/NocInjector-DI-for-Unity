@@ -1,9 +1,14 @@
 using UnityEngine;
 
-public class Car
-{
-    public Car()
+    public class Car
     {
-        Debug.Log("Created new car");
+        public Car()
+        {
+            Debug.Log("Created new car");
+        }
+
+        public void Drive()
+        {
+            Debug.Log("Car driving");
+        }
     }
-}

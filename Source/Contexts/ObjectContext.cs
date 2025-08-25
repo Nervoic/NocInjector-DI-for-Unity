@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace NocInjector
@@ -29,7 +28,7 @@ namespace NocInjector
                 ComponentContainer = new ComponentContainer(gameObject);
                 ServiceContainer = new ServiceContainer();
                 
-                foreach (var installer in installers.Where(i => i is not null))
+                foreach (var installer in serviceInstallers.Where(i => i is not null))
                     installer.Install(ServiceContainer);
                 
                 InjectToComponents();
@@ -42,7 +41,7 @@ namespace NocInjector
         
         private void InjectToComponents()
         {
-            new InjectorManager().Inject(this);
+            new DependencyInjector().Inject(this);
         }
     }
 }
