@@ -5,71 +5,43 @@ namespace NocInjector
 {
     public static class ComponentExtension
     {
+        
         /// <summary>
-        /// Accesses the object container and retrieves an instance of the component from it
+        /// Returns a component from the ObjectContext container
         /// </summary>
         /// <param name="gameObject"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="id">Implementation ID</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T ResolveComponent<T>(this GameObject gameObject) where T : Component
+        
+        public static T ResolveComponent<T>(this GameObject gameObject, string id = null) where T : Component
         {
-            if (typeof(T).IsInterface)
-            {
-                Debug.LogError($"To get a component by interface {typeof(T).Name}, use the ResolveComponentByInterface method");
-                return null;
-            }
-
-            var injectObject = gameObject.GetContext();
+            var container = GetContainer(gameObject);
             
-            if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            return injectObject.ComponentContainer.Resolve<T>();
+            if (container is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': Context is missing. Please add Context before using dependency injection.");
+            return container.Resolve<T>(id);
         }
         
         /// <summary>
-        /// Accesses the object container and retrieves an realisation by T interface from it
+        /// Returns a component from the ObjectContext container
         /// </summary>
         /// <param name="gameObject"></param>
-        /// <param name="realisationTag"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="id">Implementation ID</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static T ResolveComponentByInterface<T>(this GameObject gameObject, string realisationTag) where T : class
-        {
-            if (!typeof(T).IsInterface)
-            {
-                Debug.LogError($"{typeof(T).Name} is not an interface. To get a component from an object container, use the ResolveComponent method");
-                return null;
-            }
-
-            var injectObject = gameObject.GetContext();
-            
-            if (injectObject is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            return injectObject.ComponentContainer.ResolveImplementation(realisationTag) as T;
-        }
         
-        /// <summary>
-        /// Accesses the object's container and adds a component to the object and its container
-        /// </summary>
-        /// <param name="gameObject"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static T RegisterComponentToContainer<T>(this GameObject gameObject) where T : Component
+        public static Component ResolveComponent(this GameObject gameObject, Component component, string id = null)
         {
-            Component component = gameObject.AddComponent<T>();
-
-            var injectObject = gameObject.GetContext();
+            var container = GetContainer(gameObject);
             
-            if (injectObject is null) throw new Exception($"Failed to add component of type '{typeof(T).Name}' to GameObject '{gameObject.name}': InjectObject component is missing. Please add InjectObject before using dependency injection.");
-            
-            injectObject.ComponentContainer.Register(typeof(Component), component);
-            return injectObject.ComponentContainer.Resolve<T>();
+            if (container is null) throw new Exception($"Failed to get component of type '{component.GetType().Name}' from GameObject '{gameObject.name}': Context component is missing. Please add Context before using dependency injection.");
+            return (Component)container.Resolve(component.GetType(), id);
         }
 
-        public static ObjectContext GetContext(this GameObject gameObject)
+        public static DependencyContainer GetContainer(this GameObject gameObject)
         {
-            return gameObject.GetComponent<ObjectContext>();
+            return gameObject.GetComponent<ObjectContext>()?.Container;
         }
     }
 }

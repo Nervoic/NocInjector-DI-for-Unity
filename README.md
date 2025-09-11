@@ -1,64 +1,40 @@
-NocInjector is a lightweight DI (Dependency Injection) container for Unity that allows you to conveniently manage dependencies between components and services.
+NocInjector is a lightweight DI (Dependency Injection) container for Unity that allows you to conveniently manage dependencies.
 
-## Work on Unity 2022+
-
+## Works in Unity version 2022+
 
 ## Main features
-- Registration and authorization of components and services
-- Attributes for automatic dependency injection and registration
+- Registration and resolution of any dependencies
+- Attributes for automatic dependency injection
 - Contexts for separating scopes
-- No need to register components.
-- Implementation by interfaces using implementation tags
+- Implementation using implementation tags
+- Flexibility in registering and resolving dependencies
 
 ## Quick start
 
-1. Add the InjectObject component to your GameObject and register the class:
+1. Register the dependency using the Installer and drag it to the Installers field of the context you need.
 
-Using the attribute
-```csharp
-[Register(ServiceLifeTime.Singleton, ContextLifeTime.Scene)]
-public class MyService 
-{
-    
-}
-```
-Or using the Installer
 ```csharp
 public class MyServiceInstaller : Installer 
 {
-    public override void Install(ServiceContainer container) 
+    public override void Install(DependencyContainer container) 
     {
-        container.Register<MyService>(ServiceLifeTime.Singleton)
+        container.Register<MyService>(Lifetime.Transient).WithId("Main")
     }
 }
 ```
-For components, registration is automatic in the local ObjectContainer.
 
-2. Request the service manually:
+2. Request the dependency manually:
 
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [SerializeField] private Context sceneContext;
+    [SerializeField] private GameContext sceneContext;
     
     private MyService _service
     
     public void Start() 
     {
-        _service = sceneContext.Container.Resolve<MyService>();
-    }
-}
-```
-Example with a component request
-
-```csharp
-public class MyBehaviour : MonoBehaviour
-{
-    private MyBehaviour2 _behaviour
-    
-    public void Start() 
-    {
-        _behaviour = GetComponent<InjectObject>.Container.Resolve<MyBehaviour2>();
+        _service = sceneContext.Container.Resolve<MyService>("Main");
     }
 }
 ```
@@ -68,80 +44,51 @@ public class MyBehaviour : MonoBehaviour
 ```csharp
 public class MyBehaviour : MonoBehaviour 
 {
-    [Inject] private MyService _service;
-}
-```
-An example of implementing a component
-```csharp
-public class MyBehaviour : MonoBehaviour 
-{
-    [Inject] private MyBehaviour2 _behaviour
+    [Inject("Main")] private MyService _service;
 }
 ```
 
 ## For examples
-See other files in the documentation folder for detailed examples.
+See other files in the Documentation folder for detailed examples.
 
 ---
 
-NocInjector — это легковесный DI (Dependency Injection) контейнер для Unity, позволяющий удобно управлять зависимостями между компонентами и сервисами.
+NocInjector — это легковесный DI (Dependency Injection) контейнер для Unity, позволяющий удобно управлять зависимостями.
 
 
 ## Основные возможности
-- Регистрация и разрешение компонентов и сервисов
-- Атрибуты для автоматической инъекции и регистрации зависимостей
+- Регистрация и разрешение любых зависимостей
+- Атрибуты для автоматической инъекции зависимостей
 - Контексты для разделения областей видимости
-- Отсутствие необходимости регистрировать компоненты.
-- Внедрение по интерфейсам с использованием тегов реализации
+- Внедрение с использованием тегов реализации
+- Гибкость в регистрации и разрешении зависимостей
 
 ## Быстрый старт
 
-1. Добавьте компонент InjectObject на ваш GameObject и зарегистрируйте класс:
+1. Зарегистрируйте зависимость с помощью Installer-а и перетащите его в поле Installers нужного вам контекста.
 
-С помощью атрибута
-```csharp
-[Register(ServiceLifeTime.Singleton, ContextLifeTime.Scene)]
-public class MyService 
-{
-    
-}
-```
-Или с помощью Installer-а
 ```csharp
 public class MyServiceInstaller : Installer 
 {
-    public override void Install(ServiceContainer container) 
+    public override void Install(DependencyContainer container) 
     {
-        container.Register<MyService>(ServiceLifeTime.Singleton)
+        container.Register<MyService>(Lifetime.Transient).WithId("Main")
     }
 }
 ```
-Для компонентов регистрация автоматическая в локальном ObjectContainer-е
-2. Запросите сервис вручную:
+
+2. Запросите зависимость вручную:
 
 ```csharp
 public class MyBehaviour : MonoBehaviour
 {
-    [SerializeField] private Context sceneContext;
+    [SerializeField] private GameContext sceneContext;
     
     private MyService _service
     
     public void Start() 
     {
-        _service = sceneContext.Container.Resolve<MyService>();
-    }
-}
-```
-Пример с запросом компонента
-
-```csharp
-public class MyBehaviour : MonoBehaviour
-{
-    private MyBehaviour2 _behaviour
-    
-    public void Start() 
-    {
-        _behaviour = GetComponent<InjectObject>.Container.Resolve<MyBehaviour2>();
+        _service = sceneContext.Container.Resolve<MyService>("Main");
     }
 }
 ```
@@ -151,17 +98,10 @@ public class MyBehaviour : MonoBehaviour
 ```csharp
 public class MyBehaviour : MonoBehaviour 
 {
-    [Inject] private MyService _service;
-}
-```
-Пример с внедрением компонента
-```csharp
-public class MyBehaviour : MonoBehaviour 
-{
-    [Inject] private MyBehaviour2 _behaviour
+    [Inject("Main")] private MyService _service;
 }
 ```
 
 ## Примеры
-См. другие файлы в папке documentation для подробных примеров.
+См. другие файлы в папке Documentation для подробных примеров.
 

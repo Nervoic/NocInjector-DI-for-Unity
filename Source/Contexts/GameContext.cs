@@ -4,17 +4,11 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    /// <summary>
-    /// Represents a dependency injection context in the scene or project.
-    /// </summary>
+    
     public class GameContext : Context
     {
         [SerializeField] private ContextLifetime lifetime;
-        
-        /// <summary>
-        /// Service container associated with this context.
-        /// </summary>
-        public ServiceContainer Container { get; private set; }
+        public override DependencyContainer Container { get; protected set; }
 
         /// <summary>
         /// Gets the lifetime of the context.
@@ -24,18 +18,18 @@ namespace NocInjector
 
         private void Awake()
         {
-            if (lifetime is ContextLifetime.Project) 
+            if (lifetime is ContextLifetime.Project)
+            {
                 DontDestroyOnLoad(gameObject);
+            }
         }
-        public override void Install()
+        protected override void Install()
         {
-            if (Installed) return;
-            
             try
             {
-                Container = new ServiceContainer();
+                Container = new DependencyContainer(gameObject);
 
-                foreach (var installer in serviceInstallers.Where(i => i is not null)) 
+                foreach (var installer in installers.Where(i => i is not null)) 
                     installer.Install(Container);
             }
             catch (Exception e)

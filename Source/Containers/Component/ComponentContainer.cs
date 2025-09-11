@@ -1,188 +1,98 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
-    /// <summary>
-    /// Container for registering and resolving Unity components by type.
-    /// </summary>
-    public class ComponentContainer
+    internal class ComponentContainer : Container
     {
+        protected override Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; } = new();
+        protected override Dictionary<ObjectInfo, object> SingletonContainer { get; set; } = new();
+        private readonly Dictionary<ObjectInfo, GameObject> _componentsContainer = new();
+        
         private readonly GameObject _containerObject;
-        private readonly Dictionary<Type, Component> _componentsContainer = new();
-        private readonly Dictionary<string, Type> _interfaceRealisations = new();
 
         public ComponentContainer(GameObject gameObject)
         {
             _containerObject = gameObject;
         }
         
-        /// <summary>
-        /// Registers a component instance by its type.
-        /// </summary>
-        public ContainerRegister Register(Type typeToRegister, Component component)
+        public override void Register(Type typeToRegister, Lifetime lifetime)
         {
-            if (HasRegisterError(component, typeToRegister))
-                return null;
+            var newObject = new ObjectInfo(typeToRegister);
 
-            if (!_componentsContainer.TryAdd(typeToRegister, component)) 
-                Debug.LogError($"Failed to add {component.name} to container. Component already exists in the container.");
-
-            return new ContainerRegister(this, typeToRegister);
-        }
-        
-        /// <summary>
-        /// Registers a component instance by its type.
-        /// </summary>
-        
-        public ContainerRegister Register<T>(Component component) where T : Component
-        {
-            var typeToRegister = typeof(T);
-            
-            return Register(typeToRegister, component);
-        }
-        
-        public class ContainerRegister
-        {
-            private readonly ComponentContainer _container;
-            private readonly Type _currentServiceType;
-
-            public ContainerRegister(ComponentContainer container, Type currentServiceType)
+            if (!ObjectContainer.TryAdd(newObject, lifetime))
             {
-                _container = container;
-                _currentServiceType = currentServiceType;
+                Debug.LogError($"Failed to add {typeToRegister.Name} to container. Component already exists in the container.");
+                return;
             }
-            
-            /// <summary>
-            /// Registers the type as an interface implementation.
-            /// </summary>
-            public void AsImplementation(Type interfaceType, string realisationTag)
-            {
-                if (!interfaceType.IsInterface)
-                {
-                    Debug.LogError($"You are trying to register {_currentServiceType.Name} as an implementation of {interfaceType.Name}, but {interfaceType.Name} is not an interface.");
-                    return;
-                }
+            _componentsContainer.Add(newObject, _containerObject);
+        }
+        
+        
+        public override void Register<T>(Lifetime lifetime)
+        {
+            Register(typeof(T), lifetime);
+        }
 
-                if (!interfaceType.IsAssignableFrom(_currentServiceType))
+        public void RegisterComponent(Type typeToRegister, GameObject gameObject)
+        {
+            var info = GetInfoByType(typeToRegister);
+            
+            if (!_componentsContainer.TryGetValue(info, out var obj))
+                return;
+
+            _componentsContainer[info] = gameObject;
+        }
+        
+        public override object Resolve(Type objectToResolve, string id = null)
+        {
+            if (!Has(objectToResolve, id))
+                throw new Exception($"{objectToResolve.Name} is not registered in the container. Register it before resolving"); 
+
+            var objectInfo = GetObject(objectToResolve, id);
+            
+            if (ObjectContainer.TryGetValue(objectInfo, out var lifetime))
+            {
+                
+                if (_componentsContainer[objectInfo] is null)
                 {
-                    Debug.LogError($"{_currentServiceType.Name} service does not implement the {interfaceType.Name} interface, and cannot be registered.");
+                    _componentsContainer.Remove(objectInfo);
+                    return null;
                 }
                 
-                if (!_container._interfaceRealisations.TryAdd(realisationTag, _currentServiceType))
-                    Debug.LogWarning($"The {realisationTag} realisation tag is already registered in the container.");
-            }
-            
-            /// <summary>
-            /// Registers the type as an interface implementation.
-            /// </summary>
-            
-            public void AsImplementation<T>(string realisationTag)
-            {
-                var interfaceType = typeof(T);
-                
-                AsImplementation(interfaceType, realisationTag);
-            }
-        }
-        
-        /// <summary>
-        /// Resolves a component instance by its type.
-        /// </summary>
-        public Component Resolve(Type typeToResolve)
-        {
-            if (HasResolveError(typeToResolve))
-                return null;
-
-            if (_componentsContainer.TryGetValue(typeToResolve, out var component))
-            {
-                if (component is not null) return component;
-
-                _componentsContainer.Remove(typeToResolve);
-                Debug.LogWarning($"Component of type {typeToResolve.Name} is missing in the container.");
+                switch (lifetime)
+                {
+                    case Lifetime.Singleton:
+                        var singletonInfo = GetSingleton(objectToResolve, id);
+                        
+                        Component component;
+                        if (singletonInfo is null)
+                        {
+                            
+                            component = _componentsContainer[objectInfo].GetComponent(objectInfo.ObjectType);
+                            
+                            var newSingleton = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface,
+                                objectInfo.ObjectId);
+                            SingletonContainer.TryAdd(newSingleton, component);
+                        }
+                        else
+                            component = SingletonContainer[singletonInfo] as Component;
+                        return component;
+                    case Lifetime.Transient:
+                        return Object.Instantiate(_componentsContainer[objectInfo]).GetComponent(objectInfo.ObjectType);
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(lifetime), $"ServiceLifetime value '{(int)lifetime}' is not supported. Please use a valid ServiceLifetime enum value.");
+                }
             }
             
             return null;
         }
         
-        /// <summary>
-        /// Resolves a component instance by T type.
-        /// </summary>
-
-        public T Resolve<T>() where T : Component
+        public override T Resolve<T>(string id = null)
         {
-            var typeToResolve = typeof(T);
-
-            return (T)Resolve(typeToResolve);
+            return (T)Resolve(typeof(T));
         }
-        
-        /// <summary>
-        /// Resolves a component instance by interface
-        /// </summary>
-        public Component ResolveImplementation(string realisationTag)
-        {
-            return _interfaceRealisations.TryGetValue(realisationTag, out var realisationType) ? Resolve(realisationType) : null;
-        }
-        
-        /// <summary>
-        /// Resolves a component instance by T interface
-        /// </summary>
-
-        public T ResolveImplementation<T>(string realisationTag) where T : class
-        {
-            return ResolveImplementation(realisationTag) as T;
-        }
-        
-
-        private bool HasRegisterError(Component component, Type typeToRegister)
-        {
-            if (component is null)
-            {
-                Debug.LogError($"The {typeToRegister.Name} component is null.");
-                return true;
-            }
-
-            if (typeToRegister.IsInterface)
-            {
-                Debug.LogError($"Cannot register the {typeToRegister.Name} interface in the ComponentContainer on {_containerObject.name}");
-                return true;
-            }
-
-            if (component.gameObject != _containerObject)
-            {
-                Debug.LogError($"The {typeToRegister.Name} component is not located on the {_containerObject.name} container that you are trying to add it to.");
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool HasResolveError(Type typeToResolve)
-        {
-            if (typeToResolve.IsInterface)
-            {
-                Debug.LogError($"To get an instance by interface {typeToResolve.Name}, use the ResolveByInterface method");
-                return true;
-            }
-
-            return false;
-        }
-        
-        /// <summary>
-        /// Checks if the service type is registered in the container.
-        /// </summary>
-        public bool Has(Type type)
-        {
-            return _componentsContainer.ContainsKey(type);
-        }
-        
-        /// <summary>
-        /// Checks if the service type is registered in the container.
-        /// </summary>
-        public bool Has<T>()
-        {
-            return _componentsContainer.ContainsKey(typeof(T));
-        }
-        
     }
 }

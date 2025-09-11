@@ -1,57 +1,59 @@
-using System;
+
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
-    public class DependencyInjector
+    internal class DependencyInjector
     {
-        private readonly ComponentInjector _componentInjector = new();
-        private readonly ServiceInjector _serviceInjector = new();
-
-        public void Inject(ObjectContext context)
+        public void Inject(GameObject gameObject)
         {
-            try
-            {
-                var components = context.GetComponents<Component>().Where(c => c is not null).ToArray();
-                RegisterComponents(components, context.ComponentContainer);
-                
+            var components = gameObject.GetComponents<Component>().Where(c => c is not null).ToArray();
                 foreach (var component in components)
                 {
-                    foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject)) || m.IsDefined(typeof(InjectImplementation))))
+                    foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
                     {
-                        if (_componentInjector.InjectToComponent(component, injectableMember, context)) 
-                            continue;
-                        
-                        _serviceInjector.InjectToField(component, injectableMember);
+                        var context = gameObject.GetComponent<Context>();
+                        InjectToField(injectableMember, component, context?.Container);
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error during object injection: {e.Message}");
-            }
         }
 
-        private void RegisterComponents(Component[] components, ComponentContainer container)
+        public void InjectToField(MemberInfo injectableMember, object obj, DependencyContainer container = null)
         {
-            foreach (var component in components)
+            var dependencyType = injectableMember.GetMemberType();
+
+            var injectAttr = injectableMember.GetCustomAttribute<Inject>();
+            var id = injectAttr.Id;
+            var contextType = injectAttr.ContextType;
+
+            object instance = null; 
+            
+            container?.TryResolve(dependencyType, id, out instance);
+                        
+            if (instance is null && contextType != ContextType.Object)
             {
-                if (component.GetType() == typeof(ObjectContext)) continue;
+                var gameContexts = Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None);
                 
-                var type = component.GetType();
-                if (type.IsDefined(typeof(RegisterComponentAsImplementation)))
+                if (contextType is not ContextType.All)
                 {
-                    var registerComponentAsImplementationAttr = type.GetCustomAttribute<RegisterComponentAsImplementation>();
-                    var interfaceType = registerComponentAsImplementationAttr.InterfaceType;
-                    var implementationTag = registerComponentAsImplementationAttr.RealisationTag;
-                    
-                    container.Register(type, component).AsImplementation(interfaceType, implementationTag);
-                    continue;
+                    gameContexts = gameContexts.Where(c => contextType == ContextType.Project
+                        ? c.Lifetime == ContextLifetime.Project
+                        : c.Lifetime == ContextLifetime.Scene).ToArray();
                 }
-                container.Register(type, component);
+
+                foreach (var gameContext in gameContexts)
+                { 
+                    gameContext.Container.TryResolve(dependencyType, id, out instance);
+                    
+                    if (instance is not null)
+                        break;
+                }
             }
+                        
+            injectableMember.SetValue(obj, instance);
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace NocInjector
 {
-    public static class MemberExtension
+    internal static class MemberExtension
     {
         /// <summary>
         /// Allows you to set a value in a member if it is a field or property
@@ -17,9 +17,13 @@ namespace NocInjector
             switch (member)
             {
                 case FieldInfo field:
+                    if (field.GetValue(obj) is not null)
+                        return;
                     field.SetValue(obj, value);
                     break;
                 case PropertyInfo property:
+                    if (property.GetValue(obj) is not null)
+                        return;
                     property.SetValue(obj, value);
                     break;
                 default: throw new Exception("SetValue can only be used on fields or properties. Please check the MemberInfo type before calling this method.");
@@ -40,6 +44,7 @@ namespace NocInjector
                 PropertyInfo property => property.PropertyType,
                 _ => throw new InvalidOperationException("GetMemberType can only be used on fields or properties. Please check the MemberInfo type before calling this method.")
             };
+            
 
             return typeToInjection;
         }

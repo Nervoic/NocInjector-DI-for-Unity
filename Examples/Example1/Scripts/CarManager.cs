@@ -1,11 +1,17 @@
-using NocInjector;
 
-    public class CarManager : ICarManager
+using UnityEngine;
+
+namespace NocInjector
+{
+    internal class CarManager : MonoBehaviour
     {
-        private Car _car;
+        [Inject("MainFabric")] private ICarFabric _fabric;
 
-        public void CreateCar(ServiceContainer container)
+        [SerializeField] private string carName;
+
+        public void CreateCar()
         {
-            _car = container.Resolve<Car>();
+            _fabric.CreateCar(carName, gameObject.GetContainer());
         }
     }
+}

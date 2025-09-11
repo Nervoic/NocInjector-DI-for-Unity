@@ -1,47 +1,26 @@
-using System;
+
 using System.Linq;
-using UnityEngine;
 
 namespace NocInjector
 {
-    /// <summary>
-    /// MonoBehaviour for injecting dependencies into attached components.
-    /// </summary>
     public class ObjectContext : Context
     {
-        /// <summary>
-        /// Object container holding registered components.
-        /// </summary>
-        public ComponentContainer ComponentContainer { get; private set; }
-        
-        /// <summary>
-        /// Object container holding installed services.
-        /// </summary>
-        public ServiceContainer ServiceContainer { get; private set; }
-        
-        public override void Install()
+        public override DependencyContainer Container { get; protected set; }
+
+        protected override void Install()
         {
-            if (Installed) return;
-            
-            try
-            {
-                ComponentContainer = new ComponentContainer(gameObject);
-                ServiceContainer = new ServiceContainer();
+                Container = new DependencyContainer(gameObject);
                 
-                foreach (var installer in serviceInstallers.Where(i => i is not null))
-                    installer.Install(ServiceContainer);
+                foreach (var installer in installers.Where(i => i is not null))
+                    installer.Install(Container);
                 
                 InjectToComponents();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-            }
+            
         }
         
         private void InjectToComponents()
         {
-            new DependencyInjector().Inject(this);
+            new DependencyInjector().Inject(gameObject);
         }
     }
 }

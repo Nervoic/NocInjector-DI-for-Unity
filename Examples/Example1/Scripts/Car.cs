@@ -1,14 +1,12 @@
 using UnityEngine;
 
-    public class Car
+namespace NocInjector
+{
+    internal class Car
     {
-        public Car()
+        public void Create(string name)
         {
-            Debug.Log("Created new car");
-        }
-
-        public void Drive()
-        {
-            Debug.Log("Car driving");
+            Debug.Log($"Created car with name {name}");
         }
     }
+}

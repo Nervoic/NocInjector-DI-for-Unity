@@ -10,6 +10,6 @@ namespace NocInjector
         /// <summary>
         /// Installs services into the provided ServiceContainer.
         /// </summary>
-        public abstract void Install(ServiceContainer container);
+        public abstract void Install(DependencyContainer container);
     }
 }

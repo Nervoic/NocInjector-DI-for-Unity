@@ -6,188 +6,81 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    /// <summary>
-    /// Container for registering and resolving services with specified lifetimes.
-    /// </summary>
-    public class ServiceContainer
+    internal class ServiceContainer : Container
     {
-        private readonly Dictionary<Type, ServiceLifetime> _servicesContainer = new();
-        private readonly Dictionary<Type, object> _singletonContainer = new();
-        private readonly Dictionary<string, Type> _interfaceRealisations = new();
+        protected override Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; } = new();
+        protected override Dictionary<ObjectInfo, object> SingletonContainer { get; set; } = new();
 
-        private ServiceInjector _currentInjector;
+        private readonly DependencyInjector _injector = new();
         
-        /// <summary>
-        /// Registers a service type with the specified lifetime.
-        /// </summary>
-        public ContainerRegister Register(Type typeToRegister, ServiceLifetime lifetime)
+        public override void Register(Type typeToRegister, Lifetime lifetime)
         {
-            if (HasRegisterError(typeToRegister))
-                return null;
+            var newObject = new ObjectInfo(typeToRegister);
             
-            if (!_servicesContainer.TryAdd(typeToRegister, lifetime)) 
-                Debug.LogWarning($"The {typeToRegister.Name} service is already registered in the container.");
-            
-            return new ContainerRegister(this, typeToRegister);
+            if (!ObjectContainer.TryAdd(newObject, lifetime)) 
+                Debug.LogError($"The {typeToRegister.Name} service is already registered in the container.");
+        }
+
+        public override void Register<T>(Lifetime lifetime)
+        {
+            Register(typeof(T), lifetime);
         }
         
-        /// <summary>
-        /// Registers a service T type with the specified lifetime.
-        /// </summary>
-        public ContainerRegister Register<T>(ServiceLifetime lifetime)
+        public override object Resolve(Type objectToResolve, string id = null)
         {
-            var type = typeof(T);
-            return Register(type, lifetime);
-        }
-
-        public class ContainerRegister
-        {
-            private readonly ServiceContainer _container;
-            private readonly Type _currentServiceType;
-
-            public ContainerRegister(ServiceContainer container, Type currentServiceType)
-            {
-                _container = container;
-                _currentServiceType = currentServiceType;
-            }
+            if (!Has(objectToResolve, id))
+                throw new Exception($"{objectToResolve.Name} is not registered in the container. Register it before resolving"); 
             
-            /// <summary>
-            /// Registers the type as an interface implementation.
-            /// </summary>
-            public void AsImplementation(Type interfaceType, string realisationTag)
-            {
-                if (!interfaceType.IsInterface)
-                {
-                    Debug.LogError($"You are trying to register {_currentServiceType.Name} as an implementation of {interfaceType.Name}, but {interfaceType.Name} is not an interface.");
-                    return;
-                }
-
-                if (!interfaceType.IsAssignableFrom(_currentServiceType))
-                {
-                    Debug.LogError($"{_currentServiceType.Name} service does not implement the {interfaceType.Name} interface, and cannot be registered.");
-                }
-                
-                if (!_container._interfaceRealisations.TryAdd(realisationTag, _currentServiceType))
-                    Debug.LogWarning($"The {realisationTag} realisation tag is already registered in the container.");
-            }
+            var objectInfo = GetObject(objectToResolve, id);
             
-            
-            /// <summary>
-            /// Registers the type as an interface implementation.
-            /// </summary>
-            public void AsImplementation<T>(string realisationTag)
+            if (ObjectContainer.TryGetValue(objectInfo, out var lifetime))
             {
-                var interfaceType = typeof(T);
-                
-                AsImplementation(interfaceType, realisationTag);
-            }
-        }
-
-        /// <summary>
-        /// Resolves an instance of the specified service type.
-        /// </summary>
-        public object Resolve(Type serviceToResolve)
-        {
-            try
-            {
-                if (_servicesContainer.TryGetValue(serviceToResolve, out var lifetime))
-                {
                     object instance;
                     
                     switch (lifetime)
                     {
-                        case ServiceLifetime.Singleton:
-                            if (_singletonContainer.TryGetValue(serviceToResolve, out var value)) return value;
-                            instance = Activator.CreateInstance(serviceToResolve);
-                            _singletonContainer.TryAdd(serviceToResolve, instance);
+                        case Lifetime.Singleton:
+                            var singletonInfo = GetSingleton(objectToResolve, id);
+
+                            if (singletonInfo is null)
+                            {
+                                instance = Activator.CreateInstance(objectInfo.ObjectType);
+                                var newSingletonInfo = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface, objectInfo.ObjectId);
+                                SingletonContainer.TryAdd(newSingletonInfo, instance);
+                            }
+                            else
+                                instance = SingletonContainer[singletonInfo];
+                            
                             break;
-                        case ServiceLifetime.Transient:
-                            instance = Activator.CreateInstance(serviceToResolve);
+                        case Lifetime.Transient:
+                            instance = Activator.CreateInstance(objectInfo.ObjectType);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(lifetime), $"ServiceLifetime value '{(int)lifetime}' is not supported. Please use a valid ServiceLifetime enum value.");
                     }
-                    InjectToCreatedObject(instance);
-                    return instance;
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error while resolving service of type '{serviceToResolve.FullName}': {e.Message}");
-            }
 
+                    return InjectToResolvedObject(instance);
+            } 
+            
             return null;
         }
-        
-        /// <summary>
-        /// Resolves an instance of the T service type.
-        /// </summary>
 
-        public T Resolve<T>() where T : class
+        public override T Resolve<T>(string id = null)
         {
-            var serviceToResolve = typeof(T);
-
-            return (T)Resolve(serviceToResolve);
+            return (T)Resolve(typeof(T));
         }
 
-        /// <summary>
-        /// Resolves a realisation of this interface by tag
-        /// </summary>
-
-        public object ResolveImplementation(string realisationTag)
+        private object InjectToResolvedObject(object obj)
         {
-            return _interfaceRealisations.TryGetValue(realisationTag, out var realisationType) ? Resolve(realisationType) : null;
-        }
-        
-        /// <summary>
-        /// Resolves a realisation of T interface by tag
-        /// </summary>
-        
-        public T ResolveImplementation<T>(string realisationTag) where T : class
-        {
-            return (T)ResolveImplementation(realisationTag);
-        }
-
-        private void InjectToCreatedObject(object obj)
-        {
-            _currentInjector ??= new ServiceInjector();
-            foreach (var member in obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject), true)))
+            if (obj is not null)
             {
-                _currentInjector.InjectToField(obj, member);
-            }
-        }
-
-        private bool HasRegisterError(Type typeToRegister)
-        {
-            if (typeToRegister.IsSubclassOf(typeof(Component)))
-            {
-                Debug.LogError($"The {typeToRegister.Name} component cannot be added to the service container.");
-                return true;
+                foreach (var member in obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject), true)))
+                {
+                    _injector.InjectToField(member, obj);
+                }
             }
 
-            if (typeToRegister.IsInterface)
-            {
-                Debug.LogError($"Cannot register the {typeToRegister.Name} interface in the services container.");
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Checks if the service type is registered in the container.
-        /// </summary>
-        public bool Has(Type type)
-        {
-            return _servicesContainer.ContainsKey(type);
-        }
-        
-        /// <summary>
-        /// Checks if the service type is registered in the container.
-        /// </summary>
-        public bool Has<T>()
-        {
-            return _servicesContainer.ContainsKey(typeof(T));
+            return obj;
         }
     }
 }
