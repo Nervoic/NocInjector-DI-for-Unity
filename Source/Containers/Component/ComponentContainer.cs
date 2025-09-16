@@ -29,12 +29,6 @@ namespace NocInjector
             }
             _componentsContainer.Add(newObject, _containerObject);
         }
-        
-        
-        public override void Register<T>(Lifetime lifetime)
-        {
-            Register(typeof(T), lifetime);
-        }
 
         public void RegisterComponent(Type typeToRegister, GameObject gameObject)
         {
@@ -83,16 +77,11 @@ namespace NocInjector
                     case Lifetime.Transient:
                         return Object.Instantiate(_componentsContainer[objectInfo]).GetComponent(objectInfo.ObjectType);
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(lifetime), $"ServiceLifetime value '{(int)lifetime}' is not supported. Please use a valid ServiceLifetime enum value.");
+                        throw new ArgumentOutOfRangeException(nameof(lifetime), $"Lifetime value '{(int)lifetime}' is not supported. Please use a valid Lifetime enum value.");
                 }
             }
             
             return null;
-        }
-
-        public override T Resolve<T>(string tag = null)
-        {
-            return (T)Resolve(typeof(T));
         }
     }
 }

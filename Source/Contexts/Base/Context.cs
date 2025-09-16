@@ -26,6 +26,14 @@ namespace NocInjector
                 Installed = true;
             }
         }
+
+        public void InstallNew(Installer[] newInstallers)
+        {
+            foreach (var installer in newInstallers)
+            {
+                installer.Install(Container);
+            }
+        }
         
         /// <summary>
         /// Installs all services using the provided installers.

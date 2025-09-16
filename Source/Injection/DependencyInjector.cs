@@ -9,7 +9,7 @@ namespace NocInjector
 {
     internal class DependencyInjector
     {
-        public void Inject(GameObject gameObject)
+        public void InjectToObject(GameObject gameObject)
         {
             var components = gameObject.GetComponents<Component>().Where(c => c is not null).ToArray();
                 foreach (var component in components)
@@ -17,12 +17,12 @@ namespace NocInjector
                     foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
                     {
                         var context = gameObject.GetComponent<Context>();
-                        InjectToField(injectableMember, component, context?.Container);
+                        InjectToMember(injectableMember, component, context?.Container);
                     }
                 }
         }
 
-        public void InjectToField(MemberInfo injectableMember, object obj, DependencyContainer container = null)
+        public void InjectToMember(MemberInfo injectableMember, object obj, DependencyContainer container = null)
         {
             if (injectableMember is MethodInfo method)
             {

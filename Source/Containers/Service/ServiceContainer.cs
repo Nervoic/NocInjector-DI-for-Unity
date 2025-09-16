@@ -20,11 +20,6 @@ namespace NocInjector
             if (!ObjectContainer.TryAdd(newObject, lifetime)) 
                 Debug.LogError($"The {typeToRegister.Name} service is already registered in the container.");
         }
-
-        public override void Register<T>(Lifetime lifetime)
-        {
-            Register(typeof(T), lifetime);
-        }
         
         public override object Resolve(Type objectToResolve, string tag = null)
         {
@@ -56,7 +51,7 @@ namespace NocInjector
                             instance = Activator.CreateInstance(objectInfo.ObjectType);
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException(nameof(lifetime), $"ServiceLifetime value '{(int)lifetime}' is not supported. Please use a valid ServiceLifetime enum value.");
+                            throw new ArgumentOutOfRangeException(nameof(lifetime), $"Lifetime value '{(int)lifetime}' is not supported. Please use a valid Lifetime enum value.");
                     }
 
                     return InjectToResolvedObject(instance);
@@ -65,18 +60,13 @@ namespace NocInjector
             return null;
         }
 
-        public override T Resolve<T>(string tag = null)
-        {
-            return (T)Resolve(typeof(T));
-        }
-
         private object InjectToResolvedObject(object obj)
         {
             if (obj is not null)
             {
                 foreach (var member in obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject), true)))
                 {
-                    _injector.InjectToField(member, obj);
+                    _injector.InjectToMember(member, obj);
                 }
             }
 

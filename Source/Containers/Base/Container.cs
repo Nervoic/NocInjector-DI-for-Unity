@@ -9,9 +9,16 @@ namespace NocInjector
         protected abstract Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; }
         protected abstract Dictionary<ObjectInfo, object> SingletonContainer { get; set; }
         public abstract void Register(Type typeToRegister, Lifetime lifetime);
-        public abstract void Register<T>(Lifetime lifetime);
         public abstract object Resolve(Type objectToResolve, string tag = null);
-        public abstract T Resolve<T>(string tag = null);
+
+        public void Register<T>(Lifetime lifetime)
+        {
+            Register(typeof(T), lifetime);
+        }
+        public T Resolve<T>(string tag = null)
+        {
+            return (T)Resolve(typeof(T), tag);
+        }
         public bool TryResolve(Type objectToResolve, string tag, out object instance)
         {
             if (!Has(objectToResolve, tag))

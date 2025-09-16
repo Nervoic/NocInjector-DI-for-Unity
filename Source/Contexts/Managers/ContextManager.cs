@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -6,7 +7,8 @@ namespace NocInjector
 {
     public class ContextManager : MonoBehaviour
     {
-        private DependencyInjector _injector;
+        private readonly DependencyInjector _injector = new();
+        private readonly List<GameObject> _injectedObjects = new();
         private void Awake()
         {
             InstallContexts();
@@ -25,12 +27,45 @@ namespace NocInjector
 
         private void InjectToComponents()
         {
-            _injector ??= new DependencyInjector();
             var gameObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
             foreach (var obj in gameObjects)
             {
-                _injector.Inject(obj);
+                InjectToObject(obj);
             }
+        }
+        
+        
+        /// <summary>
+        /// Registers dependencies in the context on the specified GameObject if the context is available, and injects dependencies into components.
+        /// </summary>
+        /// <param name="obj">The object on which the context will be set and dependencies will be injected</param>
+        public void InstallTo(GameObject obj)
+        {
+            var context = obj.GetComponent<Context>();
+            context?.InstallContext();
+            
+            InjectToObject(obj);
+        }
+        
+        /// <summary>
+        /// Registers dependencies from Installers on the specified GameObject and in the specified context, and injects dependencies into components.
+        /// </summary>
+        /// <param name="obj">GameObject whose Installers will be registered in the specified context, and dependencies will be injected.</param>
+        /// <param name="context">Context in which the Installers will be registered</param>
+        public void InstallTo(GameObject obj, Context context)
+        {
+            var installers = obj.GetComponents<Installer>();
+            context.InstallNew(installers);
+
+            InjectToObject(obj);
+        }
+
+        private void InjectToObject(GameObject obj)
+        {
+            if (_injectedObjects.Contains(obj)) return;
+            
+            _injector.InjectToObject(obj);
+            _injectedObjects.Add(obj);
         }
     }
 }

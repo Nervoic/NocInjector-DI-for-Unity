@@ -1,5 +1,7 @@
 
+using System;
 using System.Linq;
+using UnityEngine;
 
 namespace NocInjector
 {
@@ -9,11 +11,18 @@ namespace NocInjector
 
         protected override void Install()
         {
-            Container = new DependencyContainer(gameObject);
-
-            foreach (var installer in installers.Where(i => i is not null))
+            try
             {
-                installer.Install(Container);
+                Container = new DependencyContainer(gameObject);
+
+                foreach (var installer in installers.Where(i => i is not null))
+                {
+                    installer.Install(Container);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
             }
         }
     }
