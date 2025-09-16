@@ -46,12 +46,12 @@ namespace NocInjector
             _componentsContainer[info] = gameObject;
         }
         
-        public override object Resolve(Type objectToResolve, string id = null)
+        public override object Resolve(Type objectToResolve, string tag = null)
         {
-            if (!Has(objectToResolve, id))
+            if (!Has(objectToResolve, tag))
                 throw new Exception($"{objectToResolve.Name} is not registered in the container. Register it before resolving"); 
 
-            var objectInfo = GetObject(objectToResolve, id);
+            var objectInfo = GetObject(objectToResolve, tag);
             
             if (ObjectContainer.TryGetValue(objectInfo, out var lifetime))
             {
@@ -65,7 +65,7 @@ namespace NocInjector
                 switch (lifetime)
                 {
                     case Lifetime.Singleton:
-                        var singletonInfo = GetSingleton(objectToResolve, id);
+                        var singletonInfo = GetSingleton(objectToResolve, tag);
                         
                         Component component;
                         if (singletonInfo is null)
@@ -74,7 +74,7 @@ namespace NocInjector
                             component = _componentsContainer[objectInfo].GetComponent(objectInfo.ObjectType);
                             
                             var newSingleton = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface,
-                                objectInfo.ObjectId);
+                                objectInfo.ObjectTag);
                             SingletonContainer.TryAdd(newSingleton, component);
                         }
                         else
@@ -89,8 +89,8 @@ namespace NocInjector
             
             return null;
         }
-        
-        public override T Resolve<T>(string id = null)
+
+        public override T Resolve<T>(string tag = null)
         {
             return (T)Resolve(typeof(T));
         }

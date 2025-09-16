@@ -2,14 +2,16 @@ using System;
 
 namespace NocInjector
 {
-    [AttributeUsage( AttributeTargets.Property | AttributeTargets.Field)]
+    [AttributeUsage( AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method)]
     public class Inject : Attribute
     {
         
         /// <summary>
-        /// Dependency ID
+        /// Dependency tag
         /// </summary>
-        public string Id { get; }
+        public string Tag { get; }
+        
+        public string[] Tags { get; }
         
         /// <summary>
         /// The type of context from which the dependency will be injected. By default, All
@@ -19,12 +21,12 @@ namespace NocInjector
         /// <summary>
         /// Used for automatic injection of dependencies into fields and properties
         /// </summary>
-        /// <param name="id">Dependency ID</param>
+        /// <param name="tag">Dependency ID</param>
         /// <param name="contextType">The type of context from which the dependency will be injected. By default, All</param>
         
-        public Inject(string id = null, ContextType contextType = ContextType.All)
+        public Inject(string tag = null, ContextType contextType = ContextType.All)
         {
-            Id = id;
+            Tag = tag;
             ContextType = contextType;
         }
         
@@ -37,14 +39,26 @@ namespace NocInjector
         {
             ContextType = contextType;
         }
+
+        public Inject(ContextType contextType, params string[] tags)
+        {
+            ContextType = contextType;
+            Tags = tags;
+        }
+
+        public Inject(params string[] tags)
+        {
+            Tags = tags;
+        }
         
         /// <summary>
         /// Used for automatic injection of dependencies into fields and properties
         /// </summary>
         public Inject()
         {
-            Id = null;
+            Tag = null;
             ContextType = ContextType.All;
         }
+        
     }
 }

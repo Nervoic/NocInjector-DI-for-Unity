@@ -9,18 +9,12 @@ namespace NocInjector
 
         protected override void Install()
         {
-                Container = new DependencyContainer(gameObject);
-                
-                foreach (var installer in installers.Where(i => i is not null))
-                    installer.Install(Container);
-                
-                InjectToComponents();
-            
-        }
-        
-        private void InjectToComponents()
-        {
-            new DependencyInjector().Inject(gameObject);
+            Container = new DependencyContainer(gameObject);
+
+            foreach (var installer in installers.Where(i => i is not null))
+            {
+                installer.Install(Container);
+            }
         }
     }
 }

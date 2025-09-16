@@ -26,12 +26,12 @@ namespace NocInjector
             Register(typeof(T), lifetime);
         }
         
-        public override object Resolve(Type objectToResolve, string id = null)
+        public override object Resolve(Type objectToResolve, string tag = null)
         {
-            if (!Has(objectToResolve, id))
+            if (!Has(objectToResolve, tag))
                 throw new Exception($"{objectToResolve.Name} is not registered in the container. Register it before resolving"); 
             
-            var objectInfo = GetObject(objectToResolve, id);
+            var objectInfo = GetObject(objectToResolve, tag);
             
             if (ObjectContainer.TryGetValue(objectInfo, out var lifetime))
             {
@@ -40,12 +40,12 @@ namespace NocInjector
                     switch (lifetime)
                     {
                         case Lifetime.Singleton:
-                            var singletonInfo = GetSingleton(objectToResolve, id);
+                            var singletonInfo = GetSingleton(objectToResolve, tag);
 
                             if (singletonInfo is null)
                             {
                                 instance = Activator.CreateInstance(objectInfo.ObjectType);
-                                var newSingletonInfo = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface, objectInfo.ObjectId);
+                                var newSingletonInfo = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface, objectInfo.ObjectTag);
                                 SingletonContainer.TryAdd(newSingletonInfo, instance);
                             }
                             else
@@ -65,7 +65,7 @@ namespace NocInjector
             return null;
         }
 
-        public override T Resolve<T>(string id = null)
+        public override T Resolve<T>(string tag = null)
         {
             return (T)Resolve(typeof(T));
         }

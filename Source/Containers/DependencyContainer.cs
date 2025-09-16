@@ -50,15 +50,15 @@ namespace NocInjector
         /// Returns a dependency of a specific type from the container.
         /// </summary>
         /// <param name="objectToResolve">The type of dependency to resolve</param>
-        /// <param name="id">The ID of the dependency to resolve</param>
+        /// <param name="tag">The ID of the dependency to resolve</param>
         /// <returns></returns>
-        public object Resolve(Type objectToResolve, string id = null)
+        public object Resolve(Type objectToResolve, string tag = null)
         {
-            if (!_serviceContainer.TryResolve(objectToResolve, id, out var instance))
-                _componentContainer.TryResolve(objectToResolve, id, out instance);
+            if (!_serviceContainer.TryResolve(objectToResolve, tag, out var instance))
+                _componentContainer.TryResolve(objectToResolve, tag, out instance);
 
             if (instance is null)
-                throw new Exception($"Dependency {objectToResolve.Name} with id {id} is not found.");
+                throw new Exception($"Dependency {objectToResolve.Name} with id {tag} is not found.");
 
             return instance;
         }
@@ -77,14 +77,14 @@ namespace NocInjector
         /// Returns a dependency of a specific type from the container.
         /// </summary>
         /// <param name="objectToResolve">The type of dependency to resolve</param>
-        /// <param name="id">The ID of the dependency to resolve</param>
+        /// <param name="tag">The ID of the dependency to resolve</param>
         /// <param name="instance"></param>
         /// <returns></returns>
 
-        public bool TryResolve(Type objectToResolve, string id, out object instance)
+        public bool TryResolve(Type objectToResolve, string tag, out object instance)
         {
-            if (!_serviceContainer.TryResolve(objectToResolve, id, out instance))
-                _componentContainer.TryResolve(objectToResolve, id, out instance);
+            if (!_serviceContainer.TryResolve(objectToResolve, tag, out instance))
+                _componentContainer.TryResolve(objectToResolve, tag, out instance);
             
             return instance is not null;
         }
@@ -92,18 +92,17 @@ namespace NocInjector
         /// <summary>
         /// Returns a dependency of a specific type from the container.
         /// </summary>
-        /// <param name="id">The ID of the dependency to resolve</param>
+        /// <param name="tag">The ID of the dependency to resolve</param>
         /// <param name="instance"></param>
         /// <returns></returns>
 
-        public bool TryResolve<T>(string id, out T instance)
+        public bool TryResolve<T>(string tag, out T instance)
         {
-            if (!_serviceContainer.TryResolve<T>(id, out instance))
-                _componentContainer.TryResolve<T>(id, out instance);
+            if (!_serviceContainer.TryResolve<T>(tag, out instance))
+                _componentContainer.TryResolve<T>(tag, out instance);
             
             return instance is not null;
         }
-
         private Container SelectContainerToRegister(Type typeToSelect)
         {
             return typeToSelect.IsSubclassOf(typeof(Component)) ? _componentContainer : _serviceContainer;
@@ -139,11 +138,11 @@ namespace NocInjector
             /// <summary>
             /// Adds an ID to the registered dependency.
             /// </summary>
-            /// <param name="id">ID for the dependency.</param>
+            /// <param name="tag">ID for the dependency.</param>
 
-            public void WithId(string id)
+            public void WithId(string tag)
             {
-                _container.AddId(_currentType, id);
+                _container.ChangeTag(_currentType, tag);
             }
             
             /// <summary>
@@ -159,7 +158,7 @@ namespace NocInjector
                 if (!interfaceType.IsAssignableFrom(_currentType))
                     throw new InvalidOperationException($"{_currentType.Name} service does not implement the {interfaceType.Name} interface, and cannot be registered.");
                 
-                _container.AddImplementation(_currentType, interfaceType);
+                _container.ChangeImplementation(_currentType, interfaceType);
                 return this;
             }
             
