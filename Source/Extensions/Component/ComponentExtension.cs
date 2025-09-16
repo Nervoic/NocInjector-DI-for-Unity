@@ -16,7 +16,7 @@ namespace NocInjector
         
         public static T ResolveComponent<T>(this GameObject gameObject, string id = null) where T : Component
         {
-            var container = GetContainer(gameObject);
+            var container = GetContext(gameObject).Container;
             
             if (container is null) throw new Exception($"Failed to get component of type '{typeof(T).Name}' from GameObject '{gameObject.name}': Context is missing. Please add Context before using dependency injection.");
             return container.Resolve<T>(id);
@@ -33,15 +33,23 @@ namespace NocInjector
         
         public static Component ResolveComponent(this GameObject gameObject, Component component, string id = null)
         {
-            var container = GetContainer(gameObject);
+            var container = GetContext(gameObject).Container;
             
             if (container is null) throw new Exception($"Failed to get component of type '{component.GetType().Name}' from GameObject '{gameObject.name}': Context component is missing. Please add Context before using dependency injection.");
             return (Component)container.Resolve(component.GetType(), id);
         }
-
-        public static DependencyContainer GetContainer(this GameObject gameObject)
+        
+        
+        /// <summary>
+        /// Returns the context on the given GameObject
+        /// </summary>
+        /// <param name="gameObject"></param>
+        /// <returns></returns>
+        public static Context GetContext(this GameObject gameObject)
         {
-            return gameObject.GetComponent<ObjectContext>()?.Container;
+            var context = gameObject.GetComponent<Context>();
+
+            return context;
         }
     }
 }

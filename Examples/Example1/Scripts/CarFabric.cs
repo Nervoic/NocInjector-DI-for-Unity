@@ -4,9 +4,9 @@ namespace NocInjector
 {
     internal class CarFabric : ICarFabric
     {
-        public void CreateCar(string name, DependencyContainer container)
+        public void CreateCar(string name, ContainerView containerView)
         {
-            container.Resolve<Car>().Create(name);
+            containerView.Resolve<Car>().Create(name);
         }
     }
 }

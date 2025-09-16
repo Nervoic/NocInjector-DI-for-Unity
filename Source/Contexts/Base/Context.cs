@@ -11,7 +11,7 @@ namespace NocInjector
         /// <summary>
         /// Container associated with this context.
         /// </summary>
-        public abstract DependencyContainer Container { get; protected set; }
+        public abstract ContainerView Container { get; protected set; }
         
         /// <summary>
         /// Indicates whether the context has been installed.

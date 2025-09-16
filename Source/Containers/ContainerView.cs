@@ -3,15 +3,13 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    public class DependencyContainer
+    public class ContainerView
     {
-        private readonly ServiceContainer _serviceContainer;
-        private readonly ComponentContainer _componentContainer;
+        private readonly GameContainer _gameContainer;
 
-        internal DependencyContainer(GameObject containerObject)
+        internal ContainerView(GameObject containerObject)
         {
-            _serviceContainer = new ServiceContainer();
-            _componentContainer = new ComponentContainer(containerObject);
+            _gameContainer = new GameContainer(containerObject);
         }
 
         /// <summary>
@@ -25,11 +23,10 @@ namespace NocInjector
         {
             if (typeToRegister.IsAbstract)
                 throw new Exception($"Cannot register abstract class {typeToRegister.Name}");
-
-            var container = SelectContainerToRegister(typeToRegister);
-            container.Register(typeToRegister, lifetime);
             
-            return new ContainerRegister(container, typeToRegister, this);
+            _gameContainer.Register(typeToRegister, lifetime);
+            
+            return new ContainerRegister(_gameContainer, typeToRegister);
 
         }
         
@@ -54,8 +51,7 @@ namespace NocInjector
         /// <returns></returns>
         public object Resolve(Type objectToResolve, string tag = null)
         {
-            if (!_serviceContainer.TryResolve(objectToResolve, tag, out var instance))
-                _componentContainer.TryResolve(objectToResolve, tag, out instance);
+            _gameContainer.TryResolve(objectToResolve, tag, out var instance);
 
             if (instance is null)
                 throw new Exception($"Dependency {objectToResolve.Name} with id {tag} is not found.");
@@ -83,8 +79,7 @@ namespace NocInjector
 
         public bool TryResolve(Type objectToResolve, string tag, out object instance)
         {
-            if (!_serviceContainer.TryResolve(objectToResolve, tag, out instance))
-                _componentContainer.TryResolve(objectToResolve, tag, out instance);
+            _gameContainer.TryResolve(objectToResolve, tag, out instance);
             
             return instance is not null;
         }
@@ -98,27 +93,20 @@ namespace NocInjector
 
         public bool TryResolve<T>(string tag, out T instance)
         {
-            if (!_serviceContainer.TryResolve<T>(tag, out instance))
-                _componentContainer.TryResolve<T>(tag, out instance);
+            _gameContainer.TryResolve<T>(tag, out instance);
             
             return instance is not null;
-        }
-        private Container SelectContainerToRegister(Type typeToSelect)
-        {
-            return typeToSelect.IsSubclassOf(typeof(Component)) ? _componentContainer : _serviceContainer;
         }
         
         public class ContainerRegister
         {
-            private readonly Container _container;
+            private readonly GameContainer _container;
             private readonly Type _currentType;
-            private readonly DependencyContainer _dependencyContainer;
 
-            internal ContainerRegister(Container container, Type currentType, DependencyContainer dependencyContainer)
+            internal ContainerRegister(GameContainer container, Type currentType)
             {
                 _container = container;
                 _currentType = currentType;
-                _dependencyContainer = dependencyContainer;
             }
             
             /// <summary>
@@ -131,7 +119,7 @@ namespace NocInjector
                 if (!_currentType.IsSubclassOf(typeof(Component)))
                     throw new InvalidOperationException( $"Cannot register the service {_currentType.Name} as a component on {gameObject.name}");
 
-                _dependencyContainer._componentContainer.RegisterComponent(_currentType, gameObject);
+                _container.RegisterComponent(_currentType, gameObject);
                 return this;
             }
 
