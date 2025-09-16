@@ -46,21 +46,11 @@ namespace NocInjector
             ResetObject(info, interfaceType, info.ObjectTag);
         }
 
-        public void ChangeImplementation<TImplementsType, TInterfaceType>()
-        {
-            ChangeImplementation(typeof(TImplementsType), typeof(TInterfaceType));
-        }
-
         public void ChangeTag(Type typeToAddId, string tag)
         {
             var info = GetInfoByType(typeToAddId);
             
             ResetObject(info, info.ImplementsInterface, tag);
-        }
-
-        public void ChangeTag<T>(string tag)
-        {
-            ChangeTag(typeof(T), tag);
         }
 
         private void ResetObject(ObjectInfo info, Type newImplementsType, string newTag)
@@ -89,25 +79,6 @@ namespace NocInjector
                 : SingletonContainer.FirstOrDefault(o =>
                     o.Key.ObjectType == singletonType && o.Key.ObjectTag == tag).Key;
         }
-        
-        protected ObjectInfo[] GetObjects(Type objectType, string[] tags)
-        {
-            return objectType.IsInterface
-                ? ObjectContainer.Where(o =>
-                    o.Key.ImplementsInterface == objectType && tags.Contains(o.Key.ObjectTag)).Select(o => o.Key).ToArray()
-                : ObjectContainer.Where(o =>
-                    o.Key.ObjectType == objectType && tags.Contains(o.Key.ObjectTag)).Select(o => o.Key).ToArray();
-        }
-
-        protected ObjectInfo[] GetSingletons(Type singletonType, string[] tags)
-        {
-            return singletonType.IsInterface
-                ? SingletonContainer.Where(s => 
-                    s.Key.ImplementsInterface == singletonType && tags.Contains(s.Key.ObjectTag)).Select(s => s.Key).ToArray() 
-                : SingletonContainer.Where(s => 
-                    s.Key.ObjectType == singletonType && tags.Contains(s.Key.ObjectTag)).Select(s => s.Key).ToArray();
-        }
-
         protected ObjectInfo GetInfoByType(Type type)
         {
             return ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type).Key;

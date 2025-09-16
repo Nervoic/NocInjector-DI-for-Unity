@@ -2,14 +2,12 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    /// <summary>
-    /// Abstract installer for registering services in a ServiceContainer.
-    /// </summary>
+
     public abstract class Installer : MonoBehaviour
     {
         /// <summary>
-        /// Installs services into the provided ServiceContainer.
+        /// Installs dependencies into the provided container
         /// </summary>
-        public abstract void Install(DependencyContainer container);
+        public abstract void Install(ContainerView container);
     }
 }

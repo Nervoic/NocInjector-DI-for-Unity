@@ -22,11 +22,11 @@ namespace NocInjector
                 }
         }
 
-        public void InjectToMember(MemberInfo injectableMember, object obj, DependencyContainer container = null)
+        public void InjectToMember(MemberInfo injectableMember, object obj, ContainerView containerView = null)
         {
             if (injectableMember is MethodInfo method)
             {
-                InjectToMethod(method, obj, container);
+                InjectToMethod(method, obj, containerView);
                 return;
             }
             
@@ -34,12 +34,12 @@ namespace NocInjector
 
             var injectAttr = injectableMember.GetCustomAttribute<Inject>();
             
-            var instance = GetInstance(dependencyType, container, injectAttr);
+            var instance = GetInstance(dependencyType, containerView, injectAttr);
                         
             injectableMember.SetValue(obj, instance);
         }
 
-        private void InjectToMethod(MethodInfo method, object obj, DependencyContainer container)
+        private void InjectToMethod(MethodInfo method, object obj, ContainerView containerView)
         {
             var parameters = method.GetParameters();
             var values = new object[parameters.Length];
@@ -50,7 +50,7 @@ namespace NocInjector
             {
                 var dependencyType = parameters[i].ParameterType;
                 
-                var instance = GetInstance(dependencyType, container, injectAttr);
+                var instance = GetInstance(dependencyType, containerView, injectAttr);
                 
                 values[i] = instance;
             }
@@ -59,7 +59,7 @@ namespace NocInjector
 
         }
 
-        private object GetInstance(Type dependencyType, DependencyContainer container, Inject injectAttr)
+        private object GetInstance(Type dependencyType, ContainerView containerView, Inject injectAttr)
         {
             if (dependencyType.IsArray)
                 throw new Exception($"Cannot inject array of {dependencyType.Name}");
@@ -68,7 +68,7 @@ namespace NocInjector
             var tags = injectAttr.Tags;
             var contextType = injectAttr.ContextType;
             
-            var instance = ResolveByTag(tag, tags, dependencyType, container);
+            var instance = ResolveByTag(tag, tags, dependencyType, containerView);
                         
             if (instance is null && contextType != ContextType.Object)
             {
@@ -100,7 +100,7 @@ namespace NocInjector
             return gameContexts;
         }
 
-        private object ResolveByTag(string tag, string[] tags, Type dependencyType, DependencyContainer container)
+        private object ResolveByTag(string tag, string[] tags, Type dependencyType, ContainerView containerView)
         {
             object instance = null;
             
@@ -108,14 +108,14 @@ namespace NocInjector
             {
                 foreach (var currentTag in tags)
                 {
-                    container?.TryResolve(dependencyType, currentTag, out instance);
+                    containerView?.TryResolve(dependencyType, currentTag, out instance);
                     
                     if (instance is not null)
                         break;
                 }
             } 
             else 
-                container?.TryResolve(dependencyType, tag, out instance);
+                containerView?.TryResolve(dependencyType, tag, out instance);
 
             return instance;
         }

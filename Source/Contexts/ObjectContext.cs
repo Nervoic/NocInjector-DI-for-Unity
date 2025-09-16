@@ -7,13 +7,13 @@ namespace NocInjector
 {
     public class ObjectContext : Context
     {
-        public override DependencyContainer Container { get; protected set; }
+        public override ContainerView Container { get; protected set; }
 
         protected override void Install()
         {
             try
             {
-                Container = new DependencyContainer(gameObject);
+                Container = new ContainerView(gameObject);
 
                 foreach (var installer in installers.Where(i => i is not null))
                 {

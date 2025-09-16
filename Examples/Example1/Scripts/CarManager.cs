@@ -11,7 +11,7 @@ namespace NocInjector
 
         public void CreateCar()
         {
-            _fabric.CreateCar(carName, gameObject.GetContainer());
+            _fabric.CreateCar(carName, gameObject.GetContext().Container);
         }
         
         [Inject("MainFabric")]
