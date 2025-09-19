@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace NocInjector
     {
         private readonly DependencyInjector _injector = new();
         private readonly List<GameObject> _injectedObjects = new();
+        private readonly List<GameContext> _contexts = new();
         private void Awake()
         {
             InstallContexts();
@@ -21,6 +23,10 @@ namespace NocInjector
             foreach (var context in contexts)
             {
                 context.InstallContext();
+                context.Container.Register<ContextManager>().AsComponentOn(gameObject);
+                
+                if (context.GetType() == typeof(GameContext))
+                    _contexts.Add(context as GameContext);
             }
             InjectToComponents();
         }
@@ -58,6 +64,35 @@ namespace NocInjector
             context.InstallNew(installers);
 
             InjectToObject(obj);
+        }
+        
+        /// <summary>
+        /// Returns a dependency from the first GameContext in which it is registered
+        /// </summary>
+        /// <param name="objectType">Dependency type</param>
+        /// <param name="instanceTag">Dependency tag</param>
+        /// <returns></returns>
+        public object ResolveFromAnyContext(Type objectType, string instanceTag)
+        {
+            object instance = null;
+            var context = _contexts.FirstOrDefault(c => c.Container.TryResolve(objectType, instanceTag, out instance));
+
+            return context is null ? null : instance;
+        }
+        
+        /// <summary>
+        /// Returns a dependency from the first GameContext in which it is registered
+        /// </summary>
+        /// <param name="instanceTag">Dependency tag</param>
+        /// <typeparam name="T">Dependency type</typeparam>
+        /// <returns></returns>
+        public T ResolveFromAnyContext<T>(string instanceTag)
+        {
+            T instance = default;
+            var context = _contexts.FirstOrDefault(c => c.Container.TryResolve<T>(instanceTag, out instance));
+
+            return context is null ? default : instance;
+
         }
 
         private void InjectToObject(GameObject obj)

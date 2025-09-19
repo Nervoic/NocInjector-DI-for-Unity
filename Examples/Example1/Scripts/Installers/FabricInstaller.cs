@@ -9,7 +9,7 @@ namespace NocInjector
         [SerializeField] private GameObject carManagerObject;
         public override void Install(ContainerView container)
         {
-            container.Register<CarFabric>().AsImplementation<ICarFabric>().WithId("MainFabric");
+            container.Register<CarFabric>().AsImplementation<ICarFabric>().WithTag("MainFabric");
             container.Register<CarManager>().AsComponentOn(carManagerObject);
         }
     }

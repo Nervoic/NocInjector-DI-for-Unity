@@ -124,11 +124,11 @@ namespace NocInjector
             }
 
             /// <summary>
-            /// Adds an ID to the registered dependency.
+            /// Adds an Tag to the registered dependency.
             /// </summary>
-            /// <param name="tag">ID for the dependency.</param>
+            /// <param name="tag">Tag for the dependency.</param>
 
-            public void WithId(string tag)
+            public void WithTag(string tag)
             {
                 _container.ChangeTag(_currentType, tag);
             }
@@ -136,10 +136,12 @@ namespace NocInjector
             /// <summary>
             /// Uses the type as an interface implementation
             /// </summary>
-            /// <param name="interfaceType">The type of the interface to be implemented</param>
+            /// <typeparam name="T">The type of the interface to be implemented</typeparam>
             /// <returns></returns>
-            public ContainerRegister AsImplementation(Type interfaceType)
+            public ContainerRegister AsImplementation<T>()
             {
+                var interfaceType = typeof(T);
+                
                 if (!interfaceType.IsInterface)
                     throw new InvalidOperationException($"You are trying to register {_currentType.Name} as an implementation of {interfaceType.Name}, but {interfaceType.Name} is not an interface.");
 
@@ -148,16 +150,6 @@ namespace NocInjector
                 
                 _container.ChangeImplementation(_currentType, interfaceType);
                 return this;
-            }
-            
-            /// <summary>
-            /// Uses the type as an interface implementation
-            /// </summary>
-            /// <returns></returns>
-            
-            public ContainerRegister AsImplementation<T>()
-            {
-                return AsImplementation(typeof(T));
             }
         }
         
