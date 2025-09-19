@@ -13,7 +13,7 @@ namespace NocInjector
         {
             try
             {
-                Container = new ContainerView(gameObject);
+                Container = new ContainerView();
 
                 foreach (var installer in installers.Where(i => i is not null))
                 {

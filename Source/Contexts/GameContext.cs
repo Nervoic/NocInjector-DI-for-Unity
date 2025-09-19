@@ -8,9 +8,6 @@ namespace NocInjector
     public class GameContext : Context
     {
         [SerializeField] private ContextLifetime lifetime;
-        
-        [Tooltip("Object where registered components are stored. Can be null")]
-        [SerializeField] private GameObject componentsObject;
         public override ContainerView Container { get; protected set; }
 
         /// <summary>
@@ -30,7 +27,7 @@ namespace NocInjector
         {
             try
             {
-                Container = new ContainerView(componentsObject ?? gameObject);
+                Container = new ContainerView();
 
                 foreach (var installer in installers.Where(i => i is not null)) 
                     installer.Install(Container);

@@ -16,7 +16,7 @@ NocInjector is a lightweight DI (Dependency Injection) container for Unity that 
 ```csharp
 public class MyServiceInstaller : Installer 
 {
-    public override void Install(DependencyContainer container) 
+    public override void Install(ContainerView container) 
     {
         container.Register<MyService>(Lifetime.Transient).WithId("Main")
     }
@@ -70,7 +70,7 @@ NocInjector — это легковесный DI (Dependency Injection) конт
 ```csharp
 public class MyServiceInstaller : Installer 
 {
-    public override void Install(DependencyContainer container) 
+    public override void Install(ContainerView container) 
     {
         container.Register<MyService>(Lifetime.Transient).WithId("Main")
     }

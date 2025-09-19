@@ -39,7 +39,7 @@ public class MyBehaviour : MonoBehaviour
     }
 }
 ```
-We can also refer to the container of the current object (if it has an ObjectContext)
+We can also refer to the container of the current object (if it has an Context)
 
 ```csharp
 public class MyBehaviour : MonoBehaviour
@@ -48,7 +48,7 @@ public class MyBehaviour : MonoBehaviour
     
     public void Start() 
     {
-        _behaviour = gameObject.GetContainer.Resolve<MyBehaviour2>();
+        _behaviour = gameObject.GetContext.Container.Resolve<MyBehaviour2>();
     }
 }
 ```
@@ -62,6 +62,8 @@ public class MyBehaviour : MonoBehaviour
     [Inject("Behaviour")] private IBehaviour _behaviour
 }
 ```
+
+You can also add multiple tags in the parameters of the Inject attribute.
 
 
 ## Notes
@@ -113,7 +115,7 @@ public class MyBehaviour : MonoBehaviour
     }
 }
 ```
-Также мы можем обратиться к контейнеру текущего обьекта (если он имеет ObjectContext)
+Также мы можем обратиться к контейнеру текущего обьекта (если он имеет Context)
 
 ```csharp
 public class MyBehaviour : MonoBehaviour
@@ -122,7 +124,7 @@ public class MyBehaviour : MonoBehaviour
     
     public void Start() 
     {
-        _behaviour = gameObject.GetContainer.Resolve<MyBehaviour2>();
+        _behaviour = gameObject.GetContext.Container.Resolve<MyBehaviour2>();
     }
 }
 ```
@@ -136,6 +138,8 @@ public class MyBehaviour : MonoBehaviour
     [Inject("Behaviour")] private IBehaviour _behaviour
 }
 ```
+
+Вы также можете добавить множественные теги в параметрах атрибута Inject.
 
 
 ## Примечания

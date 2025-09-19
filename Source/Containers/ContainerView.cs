@@ -7,9 +7,9 @@ namespace NocInjector
     {
         private readonly GameContainer _gameContainer;
 
-        internal ContainerView(GameObject containerObject)
+        internal ContainerView()
         {
-            _gameContainer = new GameContainer(containerObject);
+            _gameContainer = new GameContainer();
         }
 
         /// <summary>

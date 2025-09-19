@@ -15,13 +15,6 @@ namespace NocInjector
         
         private readonly DependencyInjector _injector = new();
         
-        private readonly GameObject _containerObject;
-
-        public GameContainer(GameObject gameObject)
-        {
-            _containerObject = gameObject;
-        }
-        
         public override void Register(Type typeToRegister, Lifetime lifetime)
         {
             var newObject = new ObjectInfo(typeToRegister);
@@ -33,7 +26,7 @@ namespace NocInjector
             }
             
             if (typeToRegister.IsSubclassOf(typeof(Component))) 
-                _componentsContainer.Add(newObject, _containerObject);
+                _componentsContainer.Add(newObject, null);
         }
 
         public void RegisterComponent(Type typeToRegister, GameObject gameObject)
@@ -62,7 +55,8 @@ namespace NocInjector
             {
                 if (_componentsContainer[objectInfo] is null)
                 { 
-                    _componentsContainer.Remove(objectInfo); return null;
+                    _componentsContainer.Remove(objectInfo);
+                    throw new Exception($"GameObject is not installed for component {objectType.Name}");
                 }
             }
 

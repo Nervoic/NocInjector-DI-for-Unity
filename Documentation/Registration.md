@@ -9,7 +9,7 @@ Registration of dependencies.
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install(DependencyContainer container) 
+    public void Install(ContainerView container) 
     {
         container.Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
     }
@@ -20,26 +20,13 @@ To register a dependency as an implementation of an interface, use the AsImpleme
 
 
 ## Standard registration
-Components can be registered both on the current GameObject, where they are located (if they have an ObjectContext), and as a component on another GameObject.
-
-If you register a component in a context located on a GameObject on which this component does not exist, and do not specify the GameObject of the component to be registered during registration, an attempt to obtain a dependency will cause an error.
-
-```csharp
-public class MyInstaller : MonoBehaviour
-{
-    public override void Install(ServiceContainer container) 
-    {
-        container.Register<MyBehaviour>()
-    }
-}
-```
-An error occurs if you drag this Installer into a context that does not have this component on its GameObject.
+When registering components, you must explicitly specify the GameObject on which the component is located.
 ```csharp
 public class MyServiceInstaller : Installer
 {
     [SerializeField] private GameObject behaviourObject;
     
-    public override void Install(ServiceContainer container) 
+    public override void Install(ContainerView container) 
     {
         container.Register<MyBehaviour>().AsComponentOn(behaviourObject)
     }
@@ -64,7 +51,7 @@ It can be registered in any context, as long as the BehaviourObject actually has
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install(DependencyContainer container) 
+    public void Install(ContainerView container) 
     {
         container.Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
     }
@@ -75,26 +62,13 @@ public class MyInstaller : Installer
 
 
 ## Стандартная регистрация
-Компоненты могут быть зарегистрированы как на текущем GameObject, где они находятся(если они имеет ObjectContext), так и как компонент на другом GameObject.
-
-Если зарегистрировать компонент в контексте, находящимся на GameObject, на котором данного компонента нет, и не указать GameObject регистрируемого компонента при регистрации, попытка получить зависимость вызовет ошибку.
-
-```csharp
-public class MyInstaller : MonoBehaviour
-{
-    public override void Install(ServiceContainer container) 
-    {
-        container.Register<MyBehaviour>()
-    }
-}
-```
-Ошибка, если вы перетащите данный Installer в контекст, на GameObject-е которого нет данного компонента.
+При регистрации компонентов необходимо явно указать GameObject, на котором данный компонент находится.
 ```csharp
 public class MyServiceInstaller : Installer
 {
     [SerializeField] private GameObject behaviourObject;
     
-    public override void Install(ServiceContainer container) 
+    public override void Install(ContainerView container) 
     {
         container.Register<MyBehaviour>().AsComponentOn(behaviourObject)
     }
