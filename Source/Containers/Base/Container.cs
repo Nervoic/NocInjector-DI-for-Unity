@@ -11,30 +11,20 @@ namespace NocInjector
         public abstract void Register(Type typeToRegister, Lifetime lifetime);
         public abstract object Resolve(Type objectToResolve, string tag = null);
 
-        public void Register<T>(Lifetime lifetime)
-        {
-            Register(typeof(T), lifetime);
-        }
-        public T Resolve<T>(string tag = null)
-        {
-            return (T)Resolve(typeof(T), tag);
-        }
+        public void Register<T>(Lifetime lifetime) => Register(typeof(T), lifetime);
+        public T Resolve<T>(string tag = null) => (T)Resolve(typeof(T), tag);
+        
         public bool TryResolve(Type objectToResolve, string tag, out object instance)
         {
-            if (!Has(objectToResolve, tag))
-                instance = null;
-            else 
-                instance = Resolve(objectToResolve, tag);
+            instance = Has(objectToResolve, tag) ? Resolve(objectToResolve, tag) : null;
             
             return instance is not null;
         }
 
         public bool TryResolve<T>(string tag, out T instance)
         {
-            if (!Has<T>(tag))
-                instance = default;
-            else 
-                instance = Resolve<T>(tag);
+
+            instance = Has<T>(tag) ? Resolve<T>(tag) : default;
             
             return instance is not null;
         }
@@ -84,14 +74,8 @@ namespace NocInjector
             return ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type).Key;
         }
         
-        public bool Has(Type typeToCheck, string tag = null)
-        {
-            return ObjectContainer.FirstOrDefault(i => (i.Key.ObjectType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.ObjectTag == tag).Key is not null;
-        }
+        public bool Has(Type typeToCheck, string tag = null) => ObjectContainer.FirstOrDefault(i => (i.Key.ObjectType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.ObjectTag == tag).Key is not null;
 
-        public bool Has<T>(string tag = null)
-        {
-            return Has(typeof(T), tag);
-        }
+        public bool Has<T>(string tag = null) => Has(typeof(T), tag);
     }
 }

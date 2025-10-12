@@ -5,12 +5,9 @@ namespace NocInjector
     [AttributeUsage( AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method)]
     public class Inject : Attribute
     {
-        
         /// <summary>
-        /// Dependency tag
+        /// Injected tags
         /// </summary>
-        public string Tag { get; }
-        
         public string[] Tags { get; }
         
         /// <summary>
@@ -26,7 +23,7 @@ namespace NocInjector
         
         public Inject(string tag = null, ContextType contextType = ContextType.All)
         {
-            Tag = tag;
+            Tags = new[] { tag };
             ContextType = contextType;
         }
         
@@ -37,6 +34,7 @@ namespace NocInjector
         
         public Inject(ContextType contextType = ContextType.All)
         {
+            Tags = Array.Empty<string>();
             ContextType = contextType;
         }
 
@@ -56,7 +54,7 @@ namespace NocInjector
         /// </summary>
         public Inject()
         {
-            Tag = null;
+            Tags = Array.Empty<string>();
             ContextType = ContextType.All;
         }
         

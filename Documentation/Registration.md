@@ -9,9 +9,9 @@ Registration of dependencies.
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install(ContainerView container) 
+    public void Install(r) 
     {
-        container.Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
+        Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
     }
 }
 ```
@@ -26,9 +26,9 @@ public class MyServiceInstaller : Installer
 {
     [SerializeField] private GameObject behaviourObject;
     
-    public override void Install(ContainerView container) 
+    public override void Install() 
     {
-        container.Register<MyBehaviour>().AsComponentOn(behaviourObject)
+        Register<MyBehaviour>().AsComponentOn(behaviourObject)
     }
 }
 ```
@@ -51,9 +51,9 @@ It can be registered in any context, as long as the BehaviourObject actually has
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install(ContainerView container) 
+    public void Install() 
     {
-        container.Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
+        Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
     }
 }
 ```
@@ -68,9 +68,9 @@ public class MyServiceInstaller : Installer
 {
     [SerializeField] private GameObject behaviourObject;
     
-    public override void Install(ContainerView container) 
+    public override void Install() 
     {
-        container.Register<MyBehaviour>().AsComponentOn(behaviourObject)
+        Register<MyBehaviour>().AsComponentOn(behaviourObject)
     }
 }
 ```

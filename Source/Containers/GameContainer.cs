@@ -13,7 +13,7 @@ namespace NocInjector
         protected override Dictionary<ObjectInfo, object> SingletonContainer { get; set; } = new();
         private readonly Dictionary<ObjectInfo, GameObject> _componentsContainer = new();
         
-        private readonly DependencyInjector _injector = new();
+        private readonly MemberInjector _injector = new();
         
         public override void Register(Type typeToRegister, Lifetime lifetime)
         {

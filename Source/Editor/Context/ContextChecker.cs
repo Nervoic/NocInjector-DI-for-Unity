@@ -17,10 +17,16 @@ namespace NocInjector
 
             if (context is null) return;
             
-            var contextManager = Object.FindAnyObjectByType<ContextManager>();
+            var contextManagers = Object.FindObjectsByType<ContextManager>(FindObjectsSortMode.None);
 
-            if (contextManager is null)
+            if (contextManagers is null || contextManagers.Length < 1)
+            {
                 Debug.LogWarning($"Add {nameof(ContextManager)} to the scene for NocInjector to work");
+                return;
+            }
+
+            if (contextManagers.Length > 1)
+                Debug.LogWarning($"More than 1 {nameof(ContextManager)} was detected on the stage. Please remove the extra {nameof(ContextManager)} for stable NocInjector operation");
             
         }
     }

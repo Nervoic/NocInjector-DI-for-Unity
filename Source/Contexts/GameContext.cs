@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using NocInjector.Calls;
 using UnityEngine;
 
 namespace NocInjector
@@ -30,7 +31,7 @@ namespace NocInjector
                 Container = new ContainerView();
 
                 foreach (var installer in installers.Where(i => i is not null)) 
-                    installer.Install(Container);
+                    installer.Initialize(Container);
             }
             catch (Exception e)
             {

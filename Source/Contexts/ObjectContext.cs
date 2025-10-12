@@ -17,7 +17,7 @@ namespace NocInjector
 
                 foreach (var installer in installers.Where(i => i is not null))
                 {
-                    installer.Install(Container);
+                    installer.Initialize(Container);
                 }
             }
             catch (Exception e)

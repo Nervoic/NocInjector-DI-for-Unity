@@ -1,4 +1,5 @@
 ﻿
+using NocInjector.Calls;
 using UnityEngine;
 
 namespace NocInjector
@@ -31,7 +32,7 @@ namespace NocInjector
         {
             foreach (var installer in newInstallers)
             {
-                installer.Install(Container);
+                installer.Initialize(Container);
             }
         }
         

@@ -3,122 +3,60 @@ using System;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
     internal class DependencyInjector
     {
+        
         public void InjectToObject(GameObject gameObject)
         {
             var components = gameObject.GetComponents<Component>().Where(c => c is not null).ToArray();
+            
                 foreach (var component in components)
                 {
                     foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
                     {
                         var context = gameObject.GetComponent<Context>();
-                        InjectToMember(injectableMember, component, context?.Container);
+                        var memberInjector = new MemberInjector();
+                        
+                        memberInjector.InjectToMember(injectableMember, component, context?.Container);
                     }
-                }
-        }
-
-        public void InjectToMember(MemberInfo injectableMember, object obj, ContainerView containerView = null)
-        {
-            if (injectableMember is MethodInfo method)
-            {
-                InjectToMethod(method, obj, containerView);
-                return;
-            }
-            
-            var dependencyType = injectableMember.GetMemberType();
-
-            var injectAttr = injectableMember.GetCustomAttribute<Inject>();
-            
-            var instance = GetInstance(dependencyType, containerView, injectAttr);
-                        
-            injectableMember.SetValue(obj, instance);
-        }
-
-        private void InjectToMethod(MethodInfo method, object obj, ContainerView containerView)
-        {
-            var parameters = method.GetParameters();
-            var values = new object[parameters.Length];
-
-            var injectAttr = method.GetCustomAttribute<Inject>();
-
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                var dependencyType = parameters[i].ParameterType;
-                
-                var instance = GetInstance(dependencyType, containerView, injectAttr);
-                
-                values[i] = instance;
-            }
-
-            method.Invoke(obj, values);
-
-        }
-
-        private object GetInstance(Type dependencyType, ContainerView containerView, Inject injectAttr)
-        {
-            if (dependencyType.IsArray)
-                throw new Exception($"Cannot inject array of {dependencyType.Name}");
-            
-            var tag = injectAttr.Tag;
-            var tags = injectAttr.Tags;
-            var contextType = injectAttr.ContextType;
-            
-            var instance = ResolveByTag(tag, tags, dependencyType, containerView);
-                        
-            if (instance is null && contextType != ContextType.Object)
-            {
-                var gameContexts = GetContexts(contextType);
-
-                foreach (var gameContext in gameContexts)
-                {
-                    instance = ResolveByTag(tag, tags, dependencyType, gameContext.Container);
                     
-                    if (instance is not null)
-                        break;
+                    InvokeInjectedMethods(component, component.GetType());
                 }
-            }
-
-            return instance;
         }
 
-        private GameContext[] GetContexts(ContextType contextType)
+        private void InvokeInjectedMethods(object obj, Type type)
         {
-            var gameContexts = Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None);
+            var injectedMethods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(OnInjected)));
+
+            foreach (var injectedMethod in injectedMethods)
+            {
+                if (injectedMethod.IsDefined(typeof(Inject)))
+                    throw new Exception($"You cannot inject dependencies into the {nameof(OnInjected)} method {injectedMethod.Name} in {type.Name}");
+
+                var passedParameters = injectedMethod.GetCustomAttribute<OnInjected>().Parameters;
                 
-            if (contextType is not ContextType.All)
-            {
-                gameContexts = gameContexts.Where(c => contextType == ContextType.Project
-                    ? c.Lifetime == ContextLifetime.Project
-                    : c.Lifetime == ContextLifetime.Scene).ToArray();
-            }
+                var parameters = injectedMethod.GetParameters();
+                var values = new object[parameters.Length];
+                
+                if (passedParameters.Length != parameters.Length)
+                    throw new Exception($"The parameters of the {nameof(OnInjected)} attribute must have the same number of parameters as the {injectedMethod.Name} method in {type.Name}");
 
-            return gameContexts;
-        }
-
-        private object ResolveByTag(string tag, string[] tags, Type dependencyType, ContainerView containerView)
-        {
-            object instance = null;
-            
-            if (tags is not null)
-            {
-                foreach (var currentTag in tags)
+                for (var i = 0; i < parameters.Length; i++)
                 {
-                    containerView?.TryResolve(dependencyType, currentTag, out instance);
-                    
-                    if (instance is not null)
-                        break;
-                }
-            } 
-            else 
-                containerView?.TryResolve(dependencyType, tag, out instance);
+                    var currentParameter = parameters[i];
+                    var parameterType = currentParameter.ParameterType;
 
-            return instance;
+                    if (parameterType != passedParameters[i].GetType())
+                        throw new Exception($"The passed parameter number {i} in the attribute {nameof(OnInjected)} does not match the accepted parameter of the method {injectedMethod.Name} in {type.Name}");
+
+                    values[i] = passedParameters[i];
+                }
+
+                injectedMethod.Invoke(obj, values);
+            }
         }
-        
     }
 }

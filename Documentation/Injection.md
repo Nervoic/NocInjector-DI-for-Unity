@@ -70,6 +70,7 @@ You can also add multiple tags in the parameters of the Inject attribute.
 - The attribute only works with fields and properties
 - Injection of all dependencies on an object takes place in Awake
 - Recursive injection is supported
+- - The OnInjected attribute is used as a label for methods that will need to be called after dependency injection.
 
 
 ---
@@ -146,3 +147,4 @@ public class MyBehaviour : MonoBehaviour
 - Атрибут работает только с полями и свойствами
 - Инъекция всех зависимостей на обьекте происходит в Awake 
 - Поддерживается рекурсивная иньекция
+- Атрибут OnInjected используется для как метка для методов, которые должны будут быть вызваны после иньекции зависимостей.

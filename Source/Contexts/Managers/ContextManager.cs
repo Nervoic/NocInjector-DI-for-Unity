@@ -8,9 +8,14 @@ namespace NocInjector
 {
     public class ContextManager : MonoBehaviour
     {
+        [Tooltip("Automatically registers the ContextManager in each context's container")]
+        [SerializeField] private bool autoRegisterManager;
+        
         private readonly DependencyInjector _injector = new();
         private readonly List<GameObject> _injectedObjects = new();
         private readonly List<GameContext> _contexts = new();
+        
+        public GameObject CurrentInjected { get; private set; }
         private void Awake()
         {
             InstallContexts();
@@ -23,18 +28,21 @@ namespace NocInjector
             foreach (var context in contexts)
             {
                 context.InstallContext();
-                context.Container.Register<ContextManager>().AsComponentOn(gameObject);
+                
+                if (autoRegisterManager) 
+                    context.Container.Register<ContextManager>().AsComponentOn(gameObject);
                 
                 if (context.GetType() == typeof(GameContext))
                     _contexts.Add(context as GameContext);
             }
+            
             InjectToComponents();
         }
 
         private void InjectToComponents()
         {
-            var gameObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var obj in gameObjects)
+            var injectableObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None).Where(g => !g.isStatic);
+            foreach (var obj in injectableObjects)
             {
                 InjectToObject(obj);
             }
@@ -45,7 +53,7 @@ namespace NocInjector
         /// Registers dependencies in the context on the specified GameObject if the context is available, and injects dependencies into components.
         /// </summary>
         /// <param name="obj">The object on which the context will be set and dependencies will be injected</param>
-        public void InstallTo(GameObject obj)
+        public void InstallToObject(GameObject obj)
         {
             var context = obj.GetComponent<Context>();
             context?.InstallContext();
@@ -58,7 +66,7 @@ namespace NocInjector
         /// </summary>
         /// <param name="obj">GameObject whose Installers will be registered in the specified context, and dependencies will be injected.</param>
         /// <param name="context">Context in which the Installers will be registered</param>
-        public void InstallTo(GameObject obj, Context context)
+        public void InstallFromObject(GameObject obj, Context context)
         {
             var installers = obj.GetComponents<Installer>();
             context.InstallNew(installers);
@@ -98,6 +106,8 @@ namespace NocInjector
         private void InjectToObject(GameObject obj)
         {
             if (_injectedObjects.Contains(obj)) return;
+
+            CurrentInjected = obj;
             
             _injector.InjectToObject(obj);
             _injectedObjects.Add(obj);
