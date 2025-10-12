@@ -8,38 +8,15 @@ NocInjector is a lightweight DI (Dependency Injection) container for Unity that 
 - Contexts for separating scopes
 - Implementation using implementation tags
 - Flexibility in registering and resolving dependencies
+- Own event system
 
 ## Quick start
 
-1. Register the dependency using the Installer and drag it to the Installers field of the context you need.
-
-```csharp
-public class MyServiceInstaller : Installer 
-{
-    public override void Install(ContainerView container) 
-    {
-        container.Register<MyService>(Lifetime.Transient).WithId("Main")
-    }
-}
-```
-
-2. Request the dependency manually:
-
-```csharp
-public class MyBehaviour : MonoBehaviour
-{
-    [SerializeField] private GameContext sceneContext;
-    
-    private MyService _service
-    
-    public void Start() 
-    {
-        _service = sceneContext.Container.Resolve<MyService>("Main");
-    }
-}
-```
-
-3. Use the Inject attribute for automatic injection:
+1. To use the library, you need to manually register the dependencies.
+2. You can embed a dependency via an attribute or request it manually from the container.
+3. You have full flexibility in registering and querying dependencies, allowing you to select contexts and tags.
+4. Use the Inject attribute for automatic injection:
+5. Use CallView to conveniently organize events within the project.
 
 ```csharp
 public class MyBehaviour : MonoBehaviour 
@@ -55,6 +32,7 @@ See other files in the Documentation folder for detailed examples.
 
 NocInjector — это легковесный DI (Dependency Injection) контейнер для Unity, позволяющий удобно управлять зависимостями.
 
+## Работает в Unity версии 2022+
 
 ## Основные возможности
 - Регистрация и разрешение любых зависимостей
@@ -62,38 +40,15 @@ NocInjector — это легковесный DI (Dependency Injection) конт
 - Контексты для разделения областей видимости
 - Внедрение с использованием тегов реализации
 - Гибкость в регистрации и разрешении зависимостей
+- Собственная система событий
 
 ## Быстрый старт
 
-1. Зарегистрируйте зависимость с помощью Installer-а и перетащите его в поле Installers нужного вам контекста.
-
-```csharp
-public class MyServiceInstaller : Installer 
-{
-    public override void Install(ContainerView container) 
-    {
-        container.Register<MyService>(Lifetime.Transient).WithId("Main")
-    }
-}
-```
-
-2. Запросите зависимость вручную:
-
-```csharp
-public class MyBehaviour : MonoBehaviour
-{
-    [SerializeField] private GameContext sceneContext;
-    
-    private MyService _service
-    
-    public void Start() 
-    {
-        _service = sceneContext.Container.Resolve<MyService>("Main");
-    }
-}
-```
-
-3. Используйте атрибут Inject для автоматической инъекции:
+1. Для использования библиотеки вам необходимо вручную зарегистрировать зависимости.
+2. Вы можете внедрить зависимость через атрибут или запросить ее вручную у контейнера.
+3. У вас есть полная гибкость в регистрации и запросе зависимостей, позволяя выбирать контексты и теги.
+4. Используйте атрибут Inject для автоматической инъекции:
+5. Используйте CallView для удобной организации событий внутри проекта.
 
 ```csharp
 public class MyBehaviour : MonoBehaviour 
