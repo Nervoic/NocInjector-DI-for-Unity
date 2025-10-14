@@ -1,16 +1,16 @@
 ﻿using System.Reflection;
+using NocInjector.Calls;
 using UnityEngine;
 
 namespace NocInjector
 {
     internal class MemberInjector : Injector
     {
-        public object InjectToMember(MemberInfo injectableMember, object obj, ContainerView containerView = null)
+        public void InjectToMember(MemberInfo injectableMember, object obj, ContainerView containerView = null)
         {
             if (injectableMember is MethodInfo method)
             {
                 InjectToMethod(method, obj, containerView);
-                return null;
             }
             
             var dependencyType = injectableMember.GetMemberType();
@@ -20,8 +20,6 @@ namespace NocInjector
             var instance = GetInstance(dependencyType, injectAttr, containerView);
                         
             injectableMember.SetValue(obj, instance);
-
-            return instance;
         }
         
         private void InjectToMethod(MethodInfo method, object obj, ContainerView containerView)

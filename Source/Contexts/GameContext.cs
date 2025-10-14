@@ -28,7 +28,7 @@ namespace NocInjector
         {
             try
             {
-                Container = new ContainerView();
+                Container = new ContainerView(SystemView);
 
                 foreach (var installer in installers.Where(i => i is not null)) 
                     installer.Initialize(Container);

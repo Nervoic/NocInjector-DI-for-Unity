@@ -18,13 +18,18 @@ namespace NocInjector
         /// Indicates whether the context has been installed.
         /// </summary>
         protected bool Installed { get; private set; }
+        
+        protected CallView SystemView { get; private set; }
 
-        public void InstallContext()
+        public void InstallContext(CallView systemView)
         {
             if (!Installed)
             {
+                SystemView = systemView;
                 Install();
+                
                 Installed = true;
+                
             }
         }
 

@@ -1,10 +1,16 @@
 using System;
+using NocInjector.Calls;
 
 namespace NocInjector
 {
     public class ContainerView
     {
-        private readonly GameContainer _gameContainer = new();
+        private readonly GameContainer _gameContainer;
+
+        internal ContainerView(CallView systemView)
+        {
+            _gameContainer = new GameContainer(systemView);
+        }
 
         /// <summary>
         /// Registers a type in the container.

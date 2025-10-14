@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NocInjector.Calls;
 using UnityEngine;
 
 namespace NocInjector
@@ -10,10 +11,12 @@ namespace NocInjector
     {
         [Tooltip("Automatically registers the ContextManager in each context's container")]
         [SerializeField] private bool autoRegisterManager;
-        
-        private readonly DependencyInjector _injector = new();
+
+        private DependencyInjector _injector;
         private readonly List<GameObject> _injectedObjects = new();
         private readonly List<GameContext> _contexts = new();
+
+        private readonly CallView _systemView = new();
         
         public GameObject CurrentInjected { get; private set; }
         private void Awake()
@@ -23,11 +26,13 @@ namespace NocInjector
 
         private void InstallContexts()
         {
+            _injector = new DependencyInjector(_systemView);
+            
             var contexts = FindObjectsByType<Context>(FindObjectsSortMode.None).OrderBy(c => c.GetType() == typeof(GameContext) ? 0 : 1);
 
             foreach (var context in contexts)
             {
-                context.InstallContext();
+                context.InstallContext(_systemView);
                 
                 if (autoRegisterManager) 
                     context.Container.Register<ContextManager>().AsComponentOn(gameObject);
@@ -56,7 +61,7 @@ namespace NocInjector
         public void InstallToObject(GameObject obj)
         {
             var context = obj.GetComponent<Context>();
-            context?.InstallContext();
+            context?.InstallContext(_systemView);
             
             InjectToObject(obj);
         }

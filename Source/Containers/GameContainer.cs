@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using NocInjector.Calls;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -10,10 +11,14 @@ namespace NocInjector
     internal class GameContainer : Container
     {
         protected override Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; } = new();
-        protected override Dictionary<ObjectInfo, object> SingletonContainer { get; set; } = new();
         private readonly Dictionary<ObjectInfo, GameObject> _componentsContainer = new();
         
-        private readonly MemberInjector _injector = new();
+        private readonly CallView _systemView;
+
+        internal GameContainer(CallView systemView)
+        {
+            _systemView = systemView;
+        }
         
         public override void Register(Type typeToRegister, Lifetime lifetime)
         {
@@ -33,7 +38,7 @@ namespace NocInjector
         {
             var info = GetInfoByType(typeToRegister);
             
-            if (!_componentsContainer.TryGetValue(info, out var obj))
+            if (info is null) 
                 return;
 
             _componentsContainer[info] = gameObject;
@@ -54,10 +59,7 @@ namespace NocInjector
             if (isComponent)
             {
                 if (_componentsContainer[objectInfo] is null)
-                { 
                     _componentsContainer.Remove(objectInfo);
-                    throw new Exception($"GameObject is not installed for component {objectType.Name}");
-                }
             }
 
             object instance;
@@ -65,43 +67,40 @@ namespace NocInjector
             switch (lifetime)
             {
                 case Lifetime.Singleton: 
-                    ResolveSingleton(objectInfo, tag, out instance);
+                    ResolveSingleton(objectInfo, out instance);
                     break;
                 case Lifetime.Transient:
-                    ResolveTransient(objectInfo, tag, out instance);
+                    ResolveTransient(objectInfo, out instance);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(lifetime), $"Lifetime value '{(int)lifetime}' is not supported. Please use a valid Lifetime enum value.");
             }
             
             if (!isComponent)
-                InjectToResolvedObject(instance);
+                OnInstanceResolved(instance);
 
             return instance;
         }
 
-        private void ResolveSingleton(ObjectInfo objectInfo, string tag, out object instance)
+        private void ResolveSingleton(ObjectInfo objectInfo, out object instance)
         {
+            if (objectInfo.Instance is not null)
+            {
+                instance = objectInfo.Instance;
+                return;
+            }
+
             var objectType = objectInfo.ObjectType;
             var isComponent = objectType.IsSubclassOf(typeof(Component));
-            
-            var singletonInfo = GetSingleton(objectType, tag);
 
-            if (singletonInfo is null)
-            {
-                instance = isComponent
-                    ? _componentsContainer[objectInfo].GetComponent(objectInfo.ObjectType)
-                    : Activator.CreateInstance(objectType);
-                            
-                var newSingleton = new ObjectInfo(objectInfo.ObjectType, objectInfo.ImplementsInterface, objectInfo.ObjectTag);
-                SingletonContainer.TryAdd(newSingleton, instance);
-            }
-            else 
-                instance = SingletonContainer[singletonInfo];
+            instance = isComponent
+                ? _componentsContainer[objectInfo].GetComponent(objectInfo.ObjectType)
+                : Activator.CreateInstance(objectType);
             
+            SetInstance(objectInfo, instance);
         }
 
-        private void ResolveTransient(ObjectInfo objectInfo, string tag, out object instance)
+        private void ResolveTransient(ObjectInfo objectInfo, out object instance)
         {
             var objectType = objectInfo.ObjectType;
             var isComponent = objectType.IsSubclassOf(typeof(Component));
@@ -111,14 +110,15 @@ namespace NocInjector
                 : Activator.CreateInstance(objectType);
         }
         
-        private void InjectToResolvedObject(object obj)
+        private void OnInstanceResolved(object obj)
         {
             if (obj is null) return;
+
+            var injectableMembers = obj.GetType()
+                .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(m => m.IsDefined(typeof(Inject), true)).ToArray();
             
-            foreach (var member in obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject), true)))
-            { 
-                _injector.InjectToMember(member, obj);
-            }
+            _systemView.Call(new InstanceResolvedCall(injectableMembers, obj));
                 
         }
         

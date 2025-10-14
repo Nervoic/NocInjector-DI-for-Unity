@@ -7,7 +7,6 @@ namespace NocInjector
     internal abstract class Container
     {
         protected abstract Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; }
-        protected abstract Dictionary<ObjectInfo, object> SingletonContainer { get; set; }
         public abstract void Register(Type typeToRegister, Lifetime lifetime);
         public abstract object Resolve(Type objectToResolve, string tag = null);
 
@@ -33,19 +32,24 @@ namespace NocInjector
         {
             var info = GetInfoByType(implementsType);
 
-            ResetObject(info, interfaceType, info.ObjectTag);
+            ResetObject(info, interfaceType, info.ObjectTag, info.Instance);
         }
 
         public void ChangeTag(Type typeToAddId, string tag)
         {
             var info = GetInfoByType(typeToAddId);
             
-            ResetObject(info, info.ImplementsInterface, tag);
+            ResetObject(info, info.ImplementsInterface, tag, info.Instance);
         }
 
-        private void ResetObject(ObjectInfo info, Type newImplementsType, string newTag)
+        protected void SetInstance(ObjectInfo info, object instance)
         {
-            var newInfo = new ObjectInfo(info.ObjectType, newImplementsType, newTag);
+            ResetObject(info, info.ImplementsInterface, info.ObjectTag, instance);
+        }
+
+        private void ResetObject(ObjectInfo info, Type newImplementsType, string newTag, object newInstance)
+        {
+            var newInfo = new ObjectInfo(info.ObjectType, newImplementsType, newTag, newInstance);
             var lifetime = ObjectContainer[info];
 
             ObjectContainer.Remove(info);
@@ -60,18 +64,15 @@ namespace NocInjector
                 : ObjectContainer.FirstOrDefault(o => 
                     o.Key.ObjectType == objectType && o.Key.ObjectTag == tag).Key;
         }
-
-        protected ObjectInfo GetSingleton(Type singletonType, string tag = null)
-        {
-            return singletonType.IsInterface
-                ? SingletonContainer.FirstOrDefault(s =>
-                    s.Key.ImplementsInterface == singletonType && s.Key.ObjectTag == tag).Key
-                : SingletonContainer.FirstOrDefault(o =>
-                    o.Key.ObjectType == singletonType && o.Key.ObjectTag == tag).Key;
-        }
         protected ObjectInfo GetInfoByType(Type type)
         {
             return ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type).Key;
+        }
+        
+        protected ObjectInfo GetInfoByInstance(Type type, object instance)
+        {
+            var info = ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type && i.Key.Instance != instance).Key;
+            return info ?? GetInfoByType(type);
         }
         
         public bool Has(Type typeToCheck, string tag = null) => ObjectContainer.FirstOrDefault(i => (i.Key.ObjectType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.ObjectTag == tag).Key is not null;

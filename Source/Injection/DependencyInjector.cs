@@ -2,12 +2,18 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using NocInjector.Calls;
 using UnityEngine;
 
 namespace NocInjector
 {
-    internal class DependencyInjector
+    internal class  DependencyInjector
     {
+        private readonly MemberInjector _memberInjector = new();
+        public DependencyInjector(CallView systemView)
+        {
+            systemView.Follow<InstanceResolvedCall>(InjectToResolved);
+        }
         
         public void InjectToObject(GameObject gameObject)
         {
@@ -18,17 +24,17 @@ namespace NocInjector
                     foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
                     {
                         var context = gameObject.GetComponent<Context>();
-                        var memberInjector = new MemberInjector();
                         
-                        memberInjector.InjectToMember(injectableMember, component, context?.Container);
+                        _memberInjector.InjectToMember(injectableMember, component, context?.Container);
                     }
                     
-                    InvokeInjectedMethods(component, component.GetType());
+                    InvokeInjectedMethods(component);
                 }
         }
 
-        private void InvokeInjectedMethods(object obj, Type type)
+        private void InvokeInjectedMethods(object obj)
         {
+            var type = obj.GetType();
             var injectedMethods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(OnInjected)));
 
             foreach (var injectedMethod in injectedMethods)
@@ -57,6 +63,19 @@ namespace NocInjector
 
                 injectedMethod.Invoke(obj, values);
             }
+        }
+
+        private void InjectToResolved(InstanceResolvedCall call)
+        {
+            var injectableMembers = call.InjectableMembers;
+            var obj = call.Obj;
+
+            foreach (var injectableMember in injectableMembers)
+            {
+                _memberInjector.InjectToMember(injectableMember, obj);
+            }
+            
+            InvokeInjectedMethods(obj);
         }
     }
 }
