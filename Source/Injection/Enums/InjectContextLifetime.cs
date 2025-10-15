@@ -1,7 +1,7 @@
 
 namespace NocInjector
 {
-    public enum ContextType 
+    public enum InjectContextLifetime 
     {
         Project,
         Scene,

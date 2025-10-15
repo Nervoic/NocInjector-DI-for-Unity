@@ -69,11 +69,6 @@ namespace NocInjector
             return ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type).Key;
         }
         
-        protected ObjectInfo GetInfoByInstance(Type type, object instance)
-        {
-            var info = ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type && i.Key.Instance != instance).Key;
-            return info ?? GetInfoByType(type);
-        }
         
         public bool Has(Type typeToCheck, string tag = null) => ObjectContainer.FirstOrDefault(i => (i.Key.ObjectType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.ObjectTag == tag).Key is not null;
 

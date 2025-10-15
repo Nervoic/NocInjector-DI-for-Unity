@@ -13,34 +13,34 @@ namespace NocInjector
         /// <summary>
         /// The type of context from which the dependency will be injected. By default, All
         /// </summary>
-        public ContextType ContextType { get; }
+        public InjectContextLifetime InjectContextLifetime { get; }
         
         /// <summary>
         /// Used for automatic injection of dependencies into fields and properties
         /// </summary>
         /// <param name="tag">Dependency ID</param>
-        /// <param name="contextType">The type of context from which the dependency will be injected. By default, All</param>
+        /// <param name="injectContextLifetime">The type of context from which the dependency will be injected. By default, All</param>
         
-        public Inject(string tag = null, ContextType contextType = ContextType.All)
+        public Inject(string tag = null, InjectContextLifetime injectContextLifetime = InjectContextLifetime.All)
         {
             Tags = new[] { tag };
-            ContextType = contextType;
+            InjectContextLifetime = injectContextLifetime;
         }
         
         /// <summary>
         /// Used for automatic injection of dependencies into fields and properties
         /// </summary>
-        /// <param name="contextType">The type of context from which the dependency will be injected. By default, All</param>
+        /// <param name="injectContextLifetime">The type of context from which the dependency will be injected. By default, All</param>
         
-        public Inject(ContextType contextType = ContextType.All)
+        public Inject(InjectContextLifetime injectContextLifetime = InjectContextLifetime.All)
         {
             Tags = Array.Empty<string>();
-            ContextType = contextType;
+            InjectContextLifetime = injectContextLifetime;
         }
 
-        public Inject(ContextType contextType, params string[] tags)
+        public Inject(InjectContextLifetime injectContextLifetime, params string[] tags)
         {
-            ContextType = contextType;
+            InjectContextLifetime = injectContextLifetime;
             Tags = tags;
         }
 
@@ -55,7 +55,7 @@ namespace NocInjector
         public Inject()
         {
             Tags = Array.Empty<string>();
-            ContextType = ContextType.All;
+            InjectContextLifetime = InjectContextLifetime.All;
         }
         
     }

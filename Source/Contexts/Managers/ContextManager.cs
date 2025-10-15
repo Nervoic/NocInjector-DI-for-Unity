@@ -12,7 +12,7 @@ namespace NocInjector
         [Tooltip("Automatically registers the ContextManager in each context's container")]
         [SerializeField] private bool autoRegisterManager;
 
-        private DependencyInjector _injector;
+        private Injector _injector;
         private readonly List<GameObject> _injectedObjects = new();
         private readonly List<GameContext> _contexts = new();
 
@@ -26,7 +26,7 @@ namespace NocInjector
 
         private void InstallContexts()
         {
-            _injector = new DependencyInjector(_systemView);
+            _injector = new Injector(_systemView);
             
             var contexts = FindObjectsByType<Context>(FindObjectsSortMode.None).OrderBy(c => c.GetType() == typeof(GameContext) ? 0 : 1);
 

@@ -7,7 +7,7 @@ namespace NocInjector.Examples
     {
         [SerializeField] private Transform spawnPosition;
 
-        [Inject(ContextType.Scene)] private CallView _view;
+        [Inject(InjectContextLifetime.Scene)] private CallView _view;
         
         [OnInjected]
         private void Follow()

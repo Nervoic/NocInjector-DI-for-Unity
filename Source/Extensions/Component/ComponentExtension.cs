@@ -7,7 +7,7 @@ namespace NocInjector
     {
         
         /// <summary>
-        /// Returns a component from the ObjectContext container
+        /// Returns a component from the Context container
         /// </summary>
         /// <param name="gameObject"></param>
         /// <param name="id">Implementation ID</param>
@@ -23,7 +23,7 @@ namespace NocInjector
         }
         
         /// <summary>
-        /// Returns a component from the ObjectContext container
+        /// Returns a component from the Context container
         /// </summary>
         /// <param name="gameObject"></param>
         /// <param name="component"></param>
@@ -47,7 +47,8 @@ namespace NocInjector
         /// <returns></returns>
         public static Context GetContext(this GameObject gameObject)
         {
-            var context = gameObject.GetComponent<Context>();
+            if (!gameObject.TryGetComponent<Context>(out var context))
+                throw new Exception($"{gameObject.name} doesn't have an any context");
 
             return context;
         }

@@ -118,7 +118,7 @@ namespace NocInjector
                 .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .Where(m => m.IsDefined(typeof(Inject), true)).ToArray();
             
-            _systemView.Call(new InstanceResolvedCall(injectableMembers, obj));
+            _systemView.Call(new DependencyResolvedCall(injectableMembers, obj));
                 
         }
         

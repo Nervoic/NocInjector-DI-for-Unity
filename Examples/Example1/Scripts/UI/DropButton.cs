@@ -7,7 +7,7 @@ namespace NocInjector.Examples
     {
         [SerializeField] private GameObject trashPrefab;
         
-        [Inject(ContextType.Scene)] private CallView _view;
+        [Inject(InjectContextLifetime.Scene)] private CallView _view;
 
         public void Trash()
         {

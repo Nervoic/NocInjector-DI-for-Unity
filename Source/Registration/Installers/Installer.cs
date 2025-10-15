@@ -12,9 +12,6 @@ namespace NocInjector
         
         private ContainerView _container;
         
-        /// <summary>
-        /// Installs dependencies into the provided container
-        /// </summary>
         protected abstract void Install();
 
         protected ContainerRegister Register(Type typeToRegister, Lifetime lifetime = Lifetime.Singleton)
