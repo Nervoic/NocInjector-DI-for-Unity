@@ -2,42 +2,99 @@
 <img width="4200" height="1500" alt="Banner" src="https://github.com/user-attachments/assets/b20de985-8594-4682-a6de-63b946088e04" />
 
 
-NocInjector is a lightweight DI (Dependency Injection) container for Unity that allows you to conveniently manage dependencies. It combines simplicity and great power, covering almost any requirements when developing your projects on Unity. If you don't have enough library functionality, the door is open for you to write your own extensions.
+NocInjector - Dependency Injection Framework for Unity
+Lightweight. Powerful. Elegant.
 
-## Works in Unity version 2022+
+## NocInjector is a dependency injection system specifically designed for Unity, combining enterprise-level architecture with exceptional performance.
 
-## Main features
-- Registration and resolution of any dependencies
-- Attributes for automatic dependency injection
-- Contexts for separating scopes
-- Implementation using implementation tags
-- Flexibility in registering and resolving dependencies
-- Own event system
+## Why NocInjector?
+- Performance First
+- Zero garbage allocation in runtime resolution
+- A flexible dependency management system and an event system
 
-## Quick start
+## Optimized for high-frequency injection scenarios
 
-1. To use the library, you need to manually register the dependencies.
-   
+### Powerful Features
 ```csharp
-public class MyInstaller : Installer 
+// Fluent API for elegant registration
+container.Register<PlayerService>()
+         .AsImplementation<IPlayerService>()
+          .AsComponentOn(playerObject);
+         .WithTag("Main")
+
+// Advanced event-driven injection
+[Inject("Main")]
+private IAudioService _audioService;
+
+// Hierarchical context system
+[Inject(InjectContextLifetime.Project)]
+private IGameConfig _config;
+```
+## Enterprise Ready
+- Call system - Fully typed event system
+- Method & Field Injection - Flexible dependency injection
+- Context Management - Project/Scene/Object lifetime scopes and custom contexts
+- Unity support - Deep Unity integration
+
+## Installation
+Install NocInjector.unitypackage, and add to your Unity-project
+
+💡 ### Quick Start
+```csharp
+public class GameInstaller : MonoBehaviour
 {
-    public void Install()
+    private void Start()
     {
-       Register<MyBehaviour>()
+        var container = new ContainerView();
+        
+        container.Register<GameManager>(Lifetime.Singleton);
+        container.Register<AudioService>().AsImplementation<IAudioService>();
+    }
+}
+
+public class GameManager : MonoBehaviour
+{
+    [Inject] private IAudioService _audioService;
+    
+    private void Start()
+    {
+        _audioService.PlayMusic(); // Injected automatically!
     }
 }
 ```
-This Installer needs to be dragged into the Installers field of the context where you want to register it.
-
-
-2. Dependency injection.
-
+## Features Deep Dive
+- Call system
 ```csharp
-public class MyBehaviour : MonoBehaviour 
+// Subscribe to events
+systemView.Follow<PlayerDiedEvent>(OnPlayerDied);
+
+// Publish events  
+systemView.Call(new PlayerDiedEvent(player));
+```
+## Context Hierarchy
+- Project Context - Global dependencies
+- Scene Context - Scene-specific dependencies
+- Object Context - GameObject-level scope
+
+## Advanced Injection
+```csharp
+// Method injection
+[Inject]
+private void InitializeServices(IAudioService audio, IInputService input)
 {
-    [Inject("Main")] private MyService _service;
+    // Dependencies injected automatically
+}
+
+// Post-injection callbacks
+[OnInjected]
+private void OnDependenciesInjected()
+{
+    // Called after all injections complete
 }
 ```
 
-## Examples
-In the Documentation folder you can find detailed examples and complete documentation.
+## Perfect For
+- Games of any complexity
+- Mobile games requiring maximum performance
+- Teams needing clean, maintainable and simple API
+- Projects with extensive Unity integration
