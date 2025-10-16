@@ -41,20 +41,18 @@ Install NocInjector.unitypackage, and add to your Unity-project
 
 💡 ## Quick Start
 ```csharp
-public class GameInstaller : MonoBehaviour
+public class GameInstaller : Installer
 {
-    private void Start()
+    protected overrive void Install()
     {
-        var container = new ContainerView();
-        
-        container.Register<GameManager>(Lifetime.Singleton);
-        container.Register<AudioService>().AsImplementation<IAudioService>();
+        Register<GameManager>(Lifetime.Singleton);
+        Register<AudioService>().AsImplementation<IAudioService>().WithTag("MainAudio");
     }
 }
 
 public class GameManager : MonoBehaviour
 {
-    [Inject] private IAudioService _audioService;
+    [Inject("MainAudio")] private IAudioService _audioService;
     
     private void Start()
     {
@@ -79,7 +77,7 @@ systemView.Call(new PlayerDiedEvent(player));
 ## Advanced Injection
 ```csharp
 // Method injection
-[Inject]
+[Inject("MainAudio", "MainInput")]
 private void InitializeServices(IAudioService audio, IInputService input)
 {
     // Dependencies injected automatically
