@@ -1,5 +1,6 @@
 
-<img width="4221" height="1070" alt="Banner" src="https://github.com/user-attachments/assets/557bff6e-93ca-4010-904b-a9014062b4f2" />
+<img width="4200" height="1500" alt="Banner" src="https://github.com/user-attachments/assets/b20de985-8594-4682-a6de-63b946088e04" />
+
 NocInjector is a lightweight DI (Dependency Injection) container for Unity that allows you to conveniently manage dependencies.
 ## Works in Unity version 2022+
 
