@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace NocInjector.Calls
 {
-    internal class CallContainer
+    internal sealed class CallContainer
     {
         private readonly List<object> _registeredFollowers = new();
         private readonly Dictionary<Type, List<object>> _callsContainer = new();
@@ -15,7 +15,7 @@ namespace NocInjector.Calls
             var newFollower = new CallFollower<T>(followerObject);
             _registeredFollowers.Add(newFollower);
         }
-        public void Follow<T>(Action method)
+        public IDisposable Follow<T>(Action method)
         {
             var followerObject = method.Target;
 
@@ -25,9 +25,10 @@ namespace NocInjector.Calls
                 throw new Exception($"You are trying set method {method.Method.Name} on {followerObject.GetType().Name} as follower to call {typeof(T)}, but this method already follow this call");
             
             follower.AddMethod(method);
+            return follower;
         }
 
-        public void Follow<T>(Action<T> method)
+        public IDisposable Follow<T>(Action<T> method)
         {
             var followerObject = method.Target;
 
@@ -37,6 +38,7 @@ namespace NocInjector.Calls
                 throw new Exception($"You are trying set method {method.Method.Name} on {followerObject.GetType().Name} as follower to call {typeof(T)}, but this method already follow this call");
             
             follower.AddMethod(method);
+            return follower;
         }
 
         private CallFollower<T> InitFollow<T>(object followerObject)
@@ -123,22 +125,24 @@ namespace NocInjector.Calls
                 }
                     
                 follower.InvokeMethods(value);
-
-                RemoveNullFollowers(nullFollowers, callFollowers);
-                    
-                nullFollowers.Clear();
             }
+            
+            RemoveNullFollowers(ref nullFollowers, ref callFollowers);
         }
 
-        private void RemoveNullFollowers(List<object> nullFollowers, List<object> callFollowers)
+        private void RemoveNullFollowers(ref List<object> nullFollowers, ref List<object> callFollowers)
         {
             if (nullFollowers.Count <= 0) return;
                 
             foreach (var nullFollower in nullFollowers)
             { 
+                ToFollower<object>(nullFollower).Dispose();
+                
                 _registeredFollowers.Remove(nullFollower);
                 callFollowers.Remove(nullFollower);
             }
+            
+            nullFollowers.Clear();
         }
 
         private bool HasFollower<T>(object followerObject) => GetFollower<T>(followerObject) is not null;

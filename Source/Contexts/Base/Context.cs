@@ -12,7 +12,7 @@ namespace NocInjector
         /// <summary>
         /// Container associated with this context.
         /// </summary>
-        public abstract ContainerView Container { get; protected set; }
+        public ContainerView Container { get; private set; }
         
         /// <summary>
         /// Indicates whether the context has been installed.
@@ -21,24 +21,22 @@ namespace NocInjector
         
         protected CallView SystemView { get; private set; }
 
-        public void InstallContext(CallView systemView)
+        public void InstallContext(ContextManager manager)
         {
-            if (!Installed)
-            {
-                SystemView = systemView;
-                Install();
-                
-                Installed = true;
-                
-            }
+            if (Installed) 
+                return;
+
+            SystemView = manager.SystemView;
+            InitializeContainer();
+            Install();
+            
+            Installed = true;
+            
         }
 
-        public void InstallNew(Installer[] newInstallers)
+        private void InitializeContainer()
         {
-            foreach (var installer in newInstallers)
-            {
-                installer.Initialize(Container);
-            }
+            Container = new ContainerView(SystemView);
         }
         
         /// <summary>

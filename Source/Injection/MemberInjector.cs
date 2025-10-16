@@ -6,17 +6,23 @@ using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
-    internal class MemberInjector
+    internal sealed class MemberInjector
     {
-        public void InjectToMember(MemberInfo injectableMember, object instance, ContainerView containerView = null)
+        private GameContext[] _contexts;
+
+        internal MemberInjector()
+        {
+            InitContexts();
+        }
+        public void InjectToMember(MemberInfo injectableMember, object instance, ContainerView objectContainer = null)
         {
             var memberType = injectableMember.GetMemberType();
             var injectAttr = injectableMember.GetCustomAttribute<Inject>();
             
             if (memberType == typeof(MethodInfo))
-                InjectToMethod(injectableMember.ToMethod(), instance, injectAttr, containerView);
+                InjectToMethod(injectableMember.ToMethod(), instance, injectAttr, objectContainer);
             else 
-                InjectToField(injectableMember, instance, injectAttr, containerView);
+                InjectToField(injectableMember, instance, injectAttr, objectContainer);
         }
 
         private void InjectToField(MemberInfo injectableField, object instance, Inject injectAttr, ContainerView containerView)
@@ -26,11 +32,11 @@ namespace NocInjector
             if (dependencyType.IsArray)
                 throw new Exception($"Cannot inject an array into the {injectableField.Name} in {instance.GetType().Name}");
 
-            var dependencyInstance = ResolveInstance(dependencyType, injectAttr, containerView);
+            var dependencyInstance = ResolveDependency(dependencyType, injectAttr, containerView);
             injectableField.SetValue(instance, dependencyInstance);
         }
         
-        private void InjectToMethod(MethodInfo method, object instance, Inject injectAttr, ContainerView containerView)
+        private void InjectToMethod(MethodInfo method, object instance, Inject injectAttr, ContainerView objectContainer)
         {
             var parameters = method.GetParameters();
             var values = new object[parameters.Length];
@@ -42,7 +48,7 @@ namespace NocInjector
                 if (dependencyType.IsArray)
                     throw new Exception($"Cannot inject an array into the {method.Name} method in {instance.GetType().Name}");
                 
-                var dependencyInstance = ResolveInstance(dependencyType, injectAttr, containerView);
+                var dependencyInstance = ResolveDependency(dependencyType, injectAttr, objectContainer);
                 
                 values[i] = dependencyInstance;
             }
@@ -51,20 +57,20 @@ namespace NocInjector
 
         }
         
-        private object ResolveInstance(Type dependencyType, Inject injectAttr, ContainerView containerView = null)
+        private object ResolveDependency(Type dependencyType, Inject injectAttr, ContainerView objectContainer = null)
         {
             var tags = injectAttr.Tags;
-            var contextType = injectAttr.InjectContextLifetime;
+            var injectLifetime = injectAttr.InjectContextLifetime;
             
-            ResolveByTags(tags, dependencyType, containerView, out var instance);
+            TryResolveByTags(tags, dependencyType, objectContainer, out var instance);
                         
-            if (instance is null && contextType != InjectContextLifetime.Object)
+            if (instance is null && injectLifetime != InjectContextLifetime.Object)
             {
-                var gameContexts = GetContexts(contextType);
+                var gameContexts = GetContextsByLifetime(injectLifetime);
 
                 foreach (var gameContext in gameContexts)
                 {
-                    ResolveByTags(tags, dependencyType, gameContext.Container, out instance);
+                    TryResolveByTags(tags, dependencyType, gameContext.Container, out instance);
                     
                     if (instance is not null)
                         break;
@@ -74,20 +80,20 @@ namespace NocInjector
             return instance;
         }
 
-        private void ResolveByTags(string[] tags, Type dependencyType, ContainerView containerView, out object instance)
+        private void TryResolveByTags(string[] tags, Type dependencyType, ContainerView objectContainer, out object instance)
         {
             instance = null;
             
-            if (containerView is null)
+            if (objectContainer is null)
                 return;
             
             if (!tags.Any())
-                containerView.TryResolve(dependencyType, null, out instance);
+                objectContainer.TryResolve(dependencyType, null, out instance);
             else
             {
                 foreach (var currentTag in tags)
                 {
-                    containerView.TryResolve(dependencyType, currentTag, out instance);
+                    objectContainer.TryResolve(dependencyType, currentTag, out instance);
 
                     if (instance is not null)
                         return;
@@ -95,18 +101,17 @@ namespace NocInjector
             }
         }
         
-        private GameContext[] GetContexts(InjectContextLifetime injectContextLifetime)
+        private GameContext[] GetContextsByLifetime(InjectContextLifetime injectContextLifetime)
         {
-            var gameContexts = Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None);
-                
-            if (injectContextLifetime is not InjectContextLifetime.All)
-            {
-                gameContexts = gameContexts.Where(c => injectContextLifetime == InjectContextLifetime.Project
-                    ? c.Lifetime == ContextLifetime.Project
-                    : c.Lifetime == ContextLifetime.Scene).ToArray();
-            }
+            if (injectContextLifetime is InjectContextLifetime.All) return _contexts;
+            
+            var selectedContexts = _contexts.Where(c => injectContextLifetime == InjectContextLifetime.Project
+                ? c.Lifetime == ContextLifetime.Project
+                : c.Lifetime == ContextLifetime.Scene).ToArray();
 
-            return gameContexts;
+            return selectedContexts;
         }
+        
+        private void InitContexts() => _contexts = Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None);
     }
 }

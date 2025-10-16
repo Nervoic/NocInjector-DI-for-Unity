@@ -45,9 +45,9 @@ namespace NocInjector
         /// </summary>
         /// <param name="gameObject"></param>
         /// <returns></returns>
-        public static Context GetContext(this GameObject gameObject)
+        public static GameContext GetContext(this GameObject gameObject)
         {
-            if (!gameObject.TryGetComponent<Context>(out var context))
+            if (!gameObject.TryGetComponent<GameContext>(out var context))
                 throw new Exception($"{gameObject.name} doesn't have an any context");
 
             return context;

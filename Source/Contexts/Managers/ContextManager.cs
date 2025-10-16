@@ -9,47 +9,48 @@ namespace NocInjector
 {
     public class ContextManager : MonoBehaviour
     {
-        [Tooltip("Automatically registers the ContextManager in each context's container")]
-        [SerializeField] private bool autoRegisterManager;
-
         private Injector _injector;
-        private readonly List<GameObject> _injectedObjects = new();
-        private readonly List<GameContext> _contexts = new();
-
-        private readonly CallView _systemView = new();
         
+        private readonly List<GameObject> _injectedObjects = new();
+        private readonly List<Context> _globalContexts = new();
+        
+        /// <summary>
+        /// The CallView used by the library.
+        /// </summary>
+        public readonly CallView SystemView = new();
         public GameObject CurrentInjected { get; private set; }
         private void Awake()
         {
+            InitializeInjector();
+            
             InstallContexts();
+            InjectToObjects();
+        }
+
+        private void InitializeInjector()
+        {
+            _injector = new Injector(SystemView);
         }
 
         private void InstallContexts()
         {
-            _injector = new Injector(_systemView);
+            var contexts = FindObjectsByType<Context>(FindObjectsSortMode.None);
             
-            var contexts = FindObjectsByType<Context>(FindObjectsSortMode.None).OrderBy(c => c.GetType() == typeof(GameContext) ? 0 : 1);
-
             foreach (var context in contexts)
             {
-                context.InstallContext(_systemView);
+                context.InstallContext(this);
                 
-                if (autoRegisterManager) 
-                    context.Container.Register<ContextManager>().AsComponentOn(gameObject);
-                
-                if (context.GetType() == typeof(GameContext))
-                    _contexts.Add(context as GameContext);
+                if (context is GameContext globalContext && globalContext.Lifetime != ContextLifetime.Object)
+                    _globalContexts.Add(globalContext);
             }
-            
-            InjectToComponents();
         }
 
-        private void InjectToComponents()
+        private void InjectToObjects()
         {
             var injectableObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None).Where(g => !g.isStatic);
-            foreach (var obj in injectableObjects)
+            foreach (var gameObj in injectableObjects)
             {
-                InjectToObject(obj);
+                InjectToObject(gameObj);
             }
         }
         
@@ -61,21 +62,8 @@ namespace NocInjector
         public void InstallToObject(GameObject obj)
         {
             var context = obj.GetComponent<Context>();
-            context?.InstallContext(_systemView);
+            context?.InstallContext(this);
             
-            InjectToObject(obj);
-        }
-        
-        /// <summary>
-        /// Registers dependencies from Installers on the specified GameObject and in the specified context, and injects dependencies into components.
-        /// </summary>
-        /// <param name="obj">GameObject whose Installers will be registered in the specified context, and dependencies will be injected.</param>
-        /// <param name="context">Context in which the Installers will be registered</param>
-        public void InstallFromObject(GameObject obj, Context context)
-        {
-            var installers = obj.GetComponents<Installer>();
-            context.InstallNew(installers);
-
             InjectToObject(obj);
         }
         
@@ -88,7 +76,7 @@ namespace NocInjector
         public object ResolveFromAnyContext(Type objectType, string instanceTag)
         {
             object instance = null;
-            var context = _contexts.FirstOrDefault(c => c.Container.TryResolve(objectType, instanceTag, out instance));
+            var context = _globalContexts.FirstOrDefault(c => c.Container.TryResolve(objectType, instanceTag, out instance));
 
             return context is null ? null : instance;
         }
@@ -102,7 +90,7 @@ namespace NocInjector
         public T ResolveFromAnyContext<T>(string instanceTag)
         {
             T instance = default;
-            var context = _contexts.FirstOrDefault(c => c.Container.TryResolve<T>(instanceTag, out instance));
+            var context = _globalContexts.FirstOrDefault(c => c.Container.TryResolve(instanceTag, out instance));
 
             return context is null ? default : instance;
 
@@ -114,7 +102,7 @@ namespace NocInjector
 
             CurrentInjected = obj;
             
-            _injector.InjectToObject(obj);
+            _injector.InjectTo(obj);
             _injectedObjects.Add(obj);
         }
     }

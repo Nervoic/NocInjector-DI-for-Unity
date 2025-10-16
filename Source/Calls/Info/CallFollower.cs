@@ -3,10 +3,9 @@ using System.Collections.Generic;
 
 namespace NocInjector.Calls
 {
-    internal class CallFollower<T>
+    internal sealed class CallFollower<T> : IDisposable
     {
-        public object FollowerObject { get; }
-        public Type FollowerType { get; }
+        public object FollowerObject { get; private set; }
 
         private readonly List<Action> _nonParamMethods = new();
         private readonly List<Action<T>> _paramMethods = new ();
@@ -14,7 +13,6 @@ namespace NocInjector.Calls
         public CallFollower(object followerObject)
         {
             FollowerObject = followerObject;
-            FollowerType = FollowerObject.GetType();
         }
 
         public void AddMethod(Action nonParamMethod) => _nonParamMethods.Add(nonParamMethod);
@@ -40,6 +38,17 @@ namespace NocInjector.Calls
 
         public Action[] GetNonParamMethods() => _nonParamMethods.ToArray();
         public Action<T>[] GetParamMethods() => _paramMethods.ToArray();
+        
+        
+        /// <summary>
+        /// Clears all follows of all methods in this class.
+        /// </summary>
+        public void Dispose()
+        {
+            _nonParamMethods.Clear();
+            _paramMethods.Clear();
 
+            FollowerObject = null;
+        }
     }
 }

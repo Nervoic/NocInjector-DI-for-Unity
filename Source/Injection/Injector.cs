@@ -7,23 +7,23 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    internal class Injector
+    internal sealed class Injector
     {
         private readonly MemberInjector _memberInjector = new();
-        public Injector(CallView systemView)
+        internal Injector(CallView systemView)
         {
             systemView.Follow<DependencyResolvedCall>(InjectToResolved);
         }
         
-        public void InjectToObject(GameObject gameObject)
+        public void InjectTo(GameObject injectableObject)
         {
-            var components = gameObject.GetComponents<Component>().Where(c => c is not null).ToArray();
+            var components = injectableObject.GetComponents<Component>().Where(c => c is not null).ToArray();
             
                 foreach (var component in components)
                 {
                     foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
                     {
-                        var context = gameObject.GetComponent<Context>();
+                        var context = injectableObject.GetComponent<Context>();
                         
                         _memberInjector.InjectToMember(injectableMember, component, context?.Container);
                     }

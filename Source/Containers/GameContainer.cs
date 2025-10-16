@@ -10,8 +10,8 @@ namespace NocInjector
 {
     internal class GameContainer : Container
     {
-        protected override Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; } = new();
-        private readonly Dictionary<ObjectInfo, GameObject> _componentsContainer = new();
+        protected override Dictionary<DependencyInfo, Lifetime> DependenciesContainer { get; set; } = new();
+        private readonly Dictionary<DependencyInfo, DependencyObject> _componentsContainer = new();
         
         private readonly CallView _systemView;
 
@@ -22,9 +22,9 @@ namespace NocInjector
         
         public override void Register(Type typeToRegister, Lifetime lifetime)
         {
-            var newObject = new ObjectInfo(typeToRegister);
+            var newObject = new DependencyInfo(typeToRegister);
 
-            if (!ObjectContainer.TryAdd(newObject, lifetime))
+            if (!DependenciesContainer.TryAdd(newObject, lifetime))
             {
                 Debug.LogWarning($"Failed to add {typeToRegister.Name} to container. Component already exists in the container.");
                 return;
@@ -39,75 +39,96 @@ namespace NocInjector
             var info = GetInfoByType(typeToRegister);
             
             if (info is null) 
-                return;
+                throw new Exception($"{typeToRegister.Name} is not registered in the container and cannot be registered as a component.");
 
-            _componentsContainer[info] = gameObject;
+            if (!gameObject.TryGetComponent<DependencyObject>(out var dependencyObject))
+                dependencyObject = gameObject.AddComponent<DependencyObject>();
+            
+            dependencyObject.Initialize(this);
+            _componentsContainer[info] = dependencyObject;
         }
         
-        public override object Resolve(Type objectToResolve, string tag = null)
+        public override object Resolve(Type dependencyToResolve, string tag = null)
         {
-            if (!Has(objectToResolve, tag))
-                throw new Exception($"{objectToResolve.Name} is not registered in the container. Register it before resolving"); 
-
-            var objectInfo = GetObject(objectToResolve, tag);
-
-            if (!ObjectContainer.TryGetValue(objectInfo, out var lifetime)) return null;
-            
-            var objectType = objectInfo.ObjectType;
-            var isComponent = objectType.IsSubclassOf(typeof(Component));
-            
-            if (isComponent)
+            if (!Has(dependencyToResolve, tag))
             {
-                if (_componentsContainer[objectInfo] is null)
-                    _componentsContainer.Remove(objectInfo);
+                if (dependencyToResolve.IsSubclassOf(typeof(Component)))
+                    throw new Exception($"{dependencyToResolve.Name} is not registered in the container, or the GameObject that the component belonged to has been deleted.");
+                
+                throw new Exception($"{dependencyToResolve.Name} is not registered in the container. Register it before resolving");
             }
 
-            object instance;
+            var dependencyInfo = GetDependency(dependencyToResolve, tag);
+            var lifetime = DependenciesContainer[dependencyInfo];
             
-            switch (lifetime)
-            {
-                case Lifetime.Singleton: 
-                    ResolveSingleton(objectInfo, out instance);
-                    break;
-                case Lifetime.Transient:
-                    ResolveTransient(objectInfo, out instance);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(lifetime), $"Lifetime value '{(int)lifetime}' is not supported. Please use a valid Lifetime enum value.");
-            }
+            ResolveByLifetime(lifetime, dependencyInfo, out var instance);
             
-            if (!isComponent)
+            if (!dependencyInfo.DependencyType.IsSubclassOf(typeof(Component)))
                 OnInstanceResolved(instance);
 
             return instance;
         }
 
-        private void ResolveSingleton(ObjectInfo objectInfo, out object instance)
+        private void ResolveByLifetime(Lifetime lifetime, DependencyInfo dependencyInfo, out object instance)
         {
-            if (objectInfo.Instance is not null)
+            switch (lifetime)
             {
-                instance = objectInfo.Instance;
+                case Lifetime.Singleton: 
+                    ResolveSingleton(dependencyInfo, out instance);
+                    break;
+                case Lifetime.Transient:
+                    ResolveTransient(dependencyInfo, out instance);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(lifetime), $"Lifetime value '{(int)lifetime}' is not supported. Please use a valid Lifetime enum value.");
+            }
+        }
+
+        private void ResolveSingleton(DependencyInfo dependencyInfo, out object instance)
+        {
+            if (dependencyInfo.Instance is not null)
+            {
+                instance = dependencyInfo.Instance;
                 return;
             }
 
-            var objectType = objectInfo.ObjectType;
+            var objectType = dependencyInfo.DependencyType;
             var isComponent = objectType.IsSubclassOf(typeof(Component));
 
             instance = isComponent
-                ? _componentsContainer[objectInfo].GetComponent(objectInfo.ObjectType)
+                ? _componentsContainer[dependencyInfo].GetComponent(dependencyInfo.DependencyType)
                 : Activator.CreateInstance(objectType);
             
-            SetInstance(objectInfo, instance);
+            SetInstance(dependencyInfo, instance);
         }
 
-        private void ResolveTransient(ObjectInfo objectInfo, out object instance)
+        private void ResolveTransient(DependencyInfo dependencyInfo, out object instance)
         {
-            var objectType = objectInfo.ObjectType;
+            var objectType = dependencyInfo.DependencyType;
             var isComponent = objectType.IsSubclassOf(typeof(Component));
             
             instance = isComponent
-                ? Object.Instantiate(_componentsContainer[objectInfo]).GetComponent(objectInfo.ObjectType) 
+                ? Object.Instantiate(_componentsContainer[dependencyInfo]).GetComponent(dependencyInfo.DependencyType) 
                 : Activator.CreateInstance(objectType);
+        }
+
+        public void DisposeObject(DependencyObject dependencyObject)
+        {
+            var objectDependencies = _componentsContainer.Where(c => c.Value == dependencyObject).Select(d => d.Key).ToList();
+            
+            foreach (var objectDependency in objectDependencies)
+            {
+                RemoveDependency(objectDependency);
+            }
+        }
+
+        private void RemoveDependency(DependencyInfo dependencyInfo)
+        {
+            if (!Has(dependencyInfo.DependencyType, dependencyInfo.DependencyTag)) 
+                return;
+            
+            DependenciesContainer.Remove(dependencyInfo);
+            _componentsContainer.Remove(dependencyInfo);
         }
         
         private void OnInstanceResolved(object obj)

@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3144556705771027494}
-  - component: {fileID: 6304621863191661128}
+  - component: {fileID: 7664232728537897964}
   m_Layer: 0
   m_Name: ContextManager
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6304621863191661128
+--- !u!114 &7664232728537897964
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,6 +41,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 985314882231362093}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd784cd83ebeb1543a05194600f20804, type: 3}
+  m_Script: {fileID: 11500000, guid: f9b359920d21f7e4493769f6b8e8d721, type: 3}
   m_Name: 
   m_EditorClassIdentifier: NocInjector::NocInjector.ContextManager

@@ -6,9 +6,9 @@ namespace NocInjector
 {
     internal abstract class Container
     {
-        protected abstract Dictionary<ObjectInfo, Lifetime> ObjectContainer { get; set; }
+        protected abstract Dictionary<DependencyInfo, Lifetime> DependenciesContainer { get; set; }
         public abstract void Register(Type typeToRegister, Lifetime lifetime);
-        public abstract object Resolve(Type objectToResolve, string tag = null);
+        public abstract object Resolve(Type dependencyToResolve, string tag = null);
 
         public void Register<T>(Lifetime lifetime) => Register(typeof(T), lifetime);
         public T Resolve<T>(string tag = null) => (T)Resolve(typeof(T), tag);
@@ -32,7 +32,7 @@ namespace NocInjector
         {
             var info = GetInfoByType(implementsType);
 
-            ResetObject(info, interfaceType, info.ObjectTag, info.Instance);
+            ResetObject(info, interfaceType, info.DependencyTag, info.Instance);
         }
 
         public void ChangeTag(Type typeToAddId, string tag)
@@ -42,35 +42,35 @@ namespace NocInjector
             ResetObject(info, info.ImplementsInterface, tag, info.Instance);
         }
 
-        protected void SetInstance(ObjectInfo info, object instance)
+        protected void SetInstance(DependencyInfo info, object instance)
         {
-            ResetObject(info, info.ImplementsInterface, info.ObjectTag, instance);
+            ResetObject(info, info.ImplementsInterface, info.DependencyTag, instance);
         }
 
-        private void ResetObject(ObjectInfo info, Type newImplementsType, string newTag, object newInstance)
+        private void ResetObject(DependencyInfo info, Type newImplementsType, string newTag, object newInstance)
         {
-            var newInfo = new ObjectInfo(info.ObjectType, newImplementsType, newTag, newInstance);
-            var lifetime = ObjectContainer[info];
+            var newInfo = new DependencyInfo(info.DependencyType, newImplementsType, newTag, newInstance);
+            var lifetime = DependenciesContainer[info];
 
-            ObjectContainer.Remove(info);
-            ObjectContainer.TryAdd(newInfo, lifetime);
+            DependenciesContainer.Remove(info);
+            DependenciesContainer.TryAdd(newInfo, lifetime);
         }
 
-        protected ObjectInfo GetObject(Type objectType, string tag = null)
+        protected DependencyInfo GetDependency(Type dependencyType, string tag = null)
         {
-            return objectType.IsInterface 
-                ? ObjectContainer.FirstOrDefault(o => 
-                    o.Key.ImplementsInterface == objectType && o.Key.ObjectTag == tag).Key 
-                : ObjectContainer.FirstOrDefault(o => 
-                    o.Key.ObjectType == objectType && o.Key.ObjectTag == tag).Key;
+            return dependencyType.IsInterface 
+                ? DependenciesContainer.FirstOrDefault(o => 
+                    o.Key.ImplementsInterface == dependencyType && o.Key.DependencyTag == tag).Key 
+                : DependenciesContainer.FirstOrDefault(o => 
+                    o.Key.DependencyType == dependencyType && o.Key.DependencyTag == tag).Key;
         }
-        protected ObjectInfo GetInfoByType(Type type)
+        protected DependencyInfo GetInfoByType(Type type)
         {
-            return ObjectContainer.FirstOrDefault(i => i.Key.ObjectType == type).Key;
+            return DependenciesContainer.FirstOrDefault(i => i.Key.DependencyType == type).Key;
         }
         
         
-        public bool Has(Type typeToCheck, string tag = null) => ObjectContainer.FirstOrDefault(i => (i.Key.ObjectType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.ObjectTag == tag).Key is not null;
+        public bool Has(Type typeToCheck, string tag = null) => DependenciesContainer.FirstOrDefault(i => (i.Key.DependencyType == typeToCheck || i.Key.ImplementsInterface == typeToCheck) && i.Key.DependencyTag == tag).Key is not null;
 
         public bool Has<T>(string tag = null) => Has(typeof(T), tag);
     }

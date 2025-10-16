@@ -4,7 +4,7 @@ using UnityEngine;
 namespace NocInjector
 {
     [InitializeOnLoad]
-    public class ContextChecker
+    public sealed class ContextChecker
     {
         static ContextChecker()
         {

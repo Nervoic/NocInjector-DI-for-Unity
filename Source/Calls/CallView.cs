@@ -3,7 +3,7 @@ using System;
 
 namespace NocInjector.Calls
 {
-    public class CallView
+    public sealed class CallView
     {
         private readonly CallContainer _container = new();
         
@@ -13,12 +13,12 @@ namespace NocInjector.Calls
         /// <param name="method">The method that subscribes to the call</param>
         /// <typeparam name="T">The type of the call</typeparam>
         /// <exception cref="Exception"></exception>
-        public void Follow<T>(Action method)
+        public IDisposable Follow<T>(Action method)
         {
             if (method is null)
                 throw new Exception($"Cannot pass a null method when follow");
             
-            _container.Follow<T>(method);
+            return _container.Follow<T>(method);
         }
         
         /// <summary>
@@ -27,12 +27,12 @@ namespace NocInjector.Calls
         /// <param name="method">The method that subscribes to the call</param>
         /// <typeparam name="T">The type of the call</typeparam>
         /// <exception cref="Exception"></exception>
-        public void Follow<T>(Action<T> method)
+        public IDisposable Follow<T>(Action<T> method)
         {
             if (method is null)
                 throw new Exception($"Cannot pass a null method when follow");
             
-            _container.Follow(method);
+            return _container.Follow(method);
         }
         
         /// <summary>

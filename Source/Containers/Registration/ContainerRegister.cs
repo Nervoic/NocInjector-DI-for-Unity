@@ -23,7 +23,10 @@ namespace NocInjector
             {
                 if (!_currentType.IsSubclassOf(typeof(Component)))
                     throw new InvalidOperationException( $"Cannot register the service {_currentType.Name} as a component on {gameObject.name}");
-
+                
+                if (gameObject is null)
+                    throw new Exception($"Cannot register {_currentType.Name} component on null-GameObject");
+                
                 _container.RegisterComponent(_currentType, gameObject);
                 return this;
             }
