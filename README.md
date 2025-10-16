@@ -39,7 +39,7 @@ private IGameConfig _config;
 ## Installation
 Install NocInjector.unitypackage, and add to your Unity-project
 
-💡 ## Quick Start
+## Quick Start
 ```csharp
 public class GameInstaller : Installer
 {
