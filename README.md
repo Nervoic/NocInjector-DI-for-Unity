@@ -39,7 +39,7 @@ private IGameConfig _config;
 ## Installation
 Install NocInjector.unitypackage, and add to your Unity-project
 
-💡 ### Quick Start
+💡 ## Quick Start
 ```csharp
 public class GameInstaller : MonoBehaviour
 {
@@ -98,3 +98,6 @@ private void OnDependenciesInjected()
 - Mobile games requiring maximum performance
 - Teams needing clean, maintainable and simple API
 - Projects with extensive Unity integration
+
+## Documentation
+- Check the Documentation folder for detailed documentation.
