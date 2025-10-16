@@ -8,6 +8,16 @@ namespace NocInjector.Calls
         private readonly CallContainer _container = new();
         
         /// <summary>
+        /// Registers the call in the container.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public IDisposable RegisterCall<T>()
+        {
+            return _container.RegisterCall<T>();
+        }
+        
+        /// <summary>
         /// Assigns a call to a method that will be called when the call is made.
         /// </summary>
         /// <param name="method">The method that subscribes to the call</param>

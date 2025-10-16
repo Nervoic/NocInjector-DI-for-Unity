@@ -92,24 +92,36 @@ namespace NocInjector
                 return;
             }
 
-            var objectType = dependencyInfo.DependencyType;
-            var isComponent = objectType.IsSubclassOf(typeof(Component));
+            var dependencyType = dependencyInfo.DependencyType;
+            var isComponent = dependencyType.IsSubclassOf(typeof(Component));
 
-            instance = isComponent
-                ? _componentsContainer[dependencyInfo].GetComponent(dependencyInfo.DependencyType)
-                : Activator.CreateInstance(objectType);
+            if (isComponent)
+            {
+                if (!_componentsContainer.TryGetValue(dependencyInfo, out var dependencyObject))
+                    throw new Exception($"{dependencyInfo.DependencyType} was not registered as a component and cannot be resolved");
+
+                instance = dependencyObject.GetComponent(dependencyType);
+            } 
+            else 
+                instance = Activator.CreateInstance(dependencyType);
             
             SetInstance(dependencyInfo, instance);
         }
 
         private void ResolveTransient(DependencyInfo dependencyInfo, out object instance)
         {
-            var objectType = dependencyInfo.DependencyType;
-            var isComponent = objectType.IsSubclassOf(typeof(Component));
+            var dependencyType = dependencyInfo.DependencyType;
+            var isComponent = dependencyType.IsSubclassOf(typeof(Component));
             
-            instance = isComponent
-                ? Object.Instantiate(_componentsContainer[dependencyInfo]).GetComponent(dependencyInfo.DependencyType) 
-                : Activator.CreateInstance(objectType);
+            if (isComponent)
+            {
+                if (!_componentsContainer.TryGetValue(dependencyInfo, out var dependencyObject))
+                    throw new Exception($"{dependencyInfo.DependencyType} was not registered as a component and cannot be resolved");
+
+                instance = Object.Instantiate(dependencyObject).GetComponent(dependencyType);
+            } 
+            else 
+                instance = Activator.CreateInstance(dependencyType);
         }
 
         public void DisposeObject(DependencyObject dependencyObject)
