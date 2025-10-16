@@ -2,8 +2,8 @@
 <img width="4200" height="1500" alt="Banner" src="https://github.com/user-attachments/assets/b20de985-8594-4682-a6de-63b946088e04" />
 
 
-## NocInjector - Dependency Injection Framework for Unity
-## Lightweight. Powerful. Elegant.
+## NocInjector - Dependency Injection Framework for Unity. Lightweight. Powerful. Elegant.
+## Unity version - 2022+, tested on IL2CPP, WebGL, Mobile, PC
 
 ## NocInjector is a dependency injection system specifically designed for Unity, combining enterprise-level architecture with exceptional performance.
 
