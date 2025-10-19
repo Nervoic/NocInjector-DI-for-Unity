@@ -24,24 +24,19 @@ namespace NocInjector
             if (typeToRegister.IsAbstract)
                 throw new Exception($"Cannot register abstract class {typeToRegister.Name}");
             
-            _gameContainer.Register(typeToRegister, lifetime);
+            var newDependency = _gameContainer.Register(typeToRegister, lifetime);
             
-            return new ContainerRegister(_gameContainer, typeToRegister);
+            return new ContainerRegister(_gameContainer, newDependency);
 
         }
-        
+
         /// <summary>
         /// Registers a type in the container.
         /// </summary>
         /// <param name="lifetime">Lifetime of the dependency. Default is Singleton</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-
-        public ContainerRegister Register<T>(Lifetime lifetime = Lifetime.Singleton)
-        {
-            return Register(typeof(T), lifetime);
-        }
-        
+        public ContainerRegister Register<T>(Lifetime lifetime = Lifetime.Singleton) => Register(typeof(T), lifetime);
         
         /// <summary>
         /// Returns a dependency of a specific type from the container.
@@ -58,16 +53,13 @@ namespace NocInjector
 
             return instance;
         }
-        
+
         /// <summary>
         /// Returns a dependency of a specific type from the container.
         /// </summary>
         /// <param name="id">The ID of the dependency to resolve</param>
         /// <returns></returns>
-        public T Resolve<T>(string id = null)
-        {
-            return (T)Resolve(typeof(T), id);
-        }
+        public T Resolve<T>(string id = null) => (T)Resolve(typeof(T), id);
         
         /// <summary>
         /// Returns a dependency of a specific type from the container.
@@ -93,7 +85,7 @@ namespace NocInjector
 
         public bool TryResolve<T>(string tag, out T instance)
         {
-            _gameContainer.TryResolve<T>(tag, out instance);
+            _gameContainer.TryResolve(tag, out instance);
             
             return instance is not null;
         }

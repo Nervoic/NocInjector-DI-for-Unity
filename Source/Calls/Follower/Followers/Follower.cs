@@ -2,11 +2,11 @@
 
 namespace NocInjector.Calls
 {
-    internal class ParamFollower<T> : DisposableFollower<T>
+    internal sealed class Follower<T> : DisposableFollower<T>
     {
         public Action<T> Method { get; }
 
-        public ParamFollower(Action<T> method)
+        public Follower(Action<T> method)
         {
             Method = method;
         }

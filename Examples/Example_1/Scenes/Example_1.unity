@@ -552,6 +552,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ContextManager
       objectReference: {fileID: 0}
+    - target: {fileID: 985314882231362093, guid: ec55b5054b9ca95408e022b30c1f540d, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3144556705771027494, guid: ec55b5054b9ca95408e022b30c1f540d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -626,7 +630,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 138f5022826611940bfbfe960db29781, type: 3}
   m_Name: 
   m_EditorClassIdentifier: NocInjector::NocInjector.Examples.MainInstaller
-  destroyAfterInstall: 0
+  trash: {fileID: 1793395011}
 --- !u!4 &1423276313
 Transform:
   m_ObjectHideFlags: 0

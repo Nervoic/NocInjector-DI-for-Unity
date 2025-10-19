@@ -13,7 +13,7 @@ GameObject:
   m_Layer: 0
   m_Name: ContextManager
   m_TagString: Untagged
-  m_Icon: {fileID: 2800000, guid: 65d1f79a4354e6641b9104ac902d544a, type: 3}
+  m_Icon: {fileID: 2800000, guid: 758b1d04f9979ef499d5abbb0edb319d, type: 3}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
   m_IsActive: 1

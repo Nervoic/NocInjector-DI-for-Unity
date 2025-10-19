@@ -1,37 +1,33 @@
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using NocInjector.Calls;
-using UnityEngine;
 
 namespace NocInjector
 {
     internal sealed class Injector
     {
-        private readonly MemberInjector _memberInjector = new();
+        private readonly MemberInjectorFactory _injectorFactory = new();
         internal Injector(CallView systemView)
         {
-            systemView.Follow<DependencyResolvedCall>(InjectToResolved);
+            systemView.Follow<DependencyCreatedCall>(InjectToCreated);
         }
         
-        public void InjectTo(GameObject injectableObject)
+        public void InjectTo(object instance, GameContext context = null)
         {
-            var components = injectableObject.GetComponents<Component>().Where(c => c is not null).ToArray();
-            
-                foreach (var component in components)
-                {
-                    foreach (var injectableMember in component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.IsDefined(typeof(Inject))))
-                    {
-                        var context = injectableObject.GetComponent<Context>();
-                        
-                        _memberInjector.InjectToMember(injectableMember, component, context?.Container);
-                    }
+            var injectableMembers = instance.GetType()
+                .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(m => m.IsDefined(typeof(Inject)));
                     
-                    InvokeInjectedMethods(component);
-                }
+            foreach (var injectableMember in injectableMembers)
+            {
+                var currentInjector = _injectorFactory.GetInjector(injectableMember.GetInjectorType());
+                currentInjector.Inject(injectableMember, instance, context);
+            }
+                    
+            InvokeInjectedMethods(instance);
         }
-
+        
         private void InvokeInjectedMethods(object instance)
         {
             var type = instance.GetType();
@@ -64,15 +60,19 @@ namespace NocInjector
                 injectedMethod.Invoke(instance, values);
             }
         }
-
-        private void InjectToResolved(DependencyResolvedCall call)
+        
+        private void InjectToCreated(DependencyCreatedCall call)
         {
-            var injectableMembers = call.InjectableMembers;
-            var instance = call.Instance;
+            var injectableMembers = call.DependencyInstance.GetType()
+                .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(m => m.IsDefined(typeof(Inject)));
+            
+            var instance = call.DependencyInstance;
 
             foreach (var injectableMember in injectableMembers)
             {
-                _memberInjector.InjectToMember(injectableMember, instance);
+                var injector = _injectorFactory.GetInjector(injectableMember.GetInjectorType());
+                injector.Inject(injectableMember, instance);
             }
             
             InvokeInjectedMethods(instance);

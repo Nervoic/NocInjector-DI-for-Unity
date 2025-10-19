@@ -48,6 +48,18 @@ namespace NocInjector
             
             return typeToInjection;
         }
+        public static InjectorType GetInjectorType(this MemberInfo member)
+        {
+            var injectorType = member switch
+            {
+                FieldInfo field => InjectorType.Field,
+                PropertyInfo property => InjectorType.Property,
+                MethodInfo method => InjectorType.Method,
+                _ => throw new InvalidOperationException($"GetInjectorType does not support the {member.Name} type")
+            };
+            
+            return injectorType;
+        }
         
         /// <summary>
         /// Allows you to get element. The return type, which is the type of a field or property

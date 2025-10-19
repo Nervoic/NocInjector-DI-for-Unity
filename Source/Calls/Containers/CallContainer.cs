@@ -17,16 +17,15 @@ namespace NocInjector.Calls
             
             if (!GetFollower<T>(method, out var follower))
             {
-                follower = new NonParamFollower<T>(method);
+                follower = new VoidFollower<T>(method);
                 _disposableFollowers.Add(follower);
             }
 
             var currentCall = GetCall<T>();
             
-            if (follower.Calls.Contains(currentCall))
-                throw new Exception($"You are trying set method {method.Method.Name} on {method.Target.GetType().Name} as follower to call {typeof(T)}, but this method already follow this call");
+            if (!follower.Calls.Contains(currentCall)) 
+                follower.AddCall(currentCall);
             
-            follower.AddCall(currentCall);
             currentCall.AddFollower(method);
             
             return follower;
@@ -39,16 +38,15 @@ namespace NocInjector.Calls
             
             if (!GetFollower(method, out var follower))
             {
-                follower = new ParamFollower<T>(method);
+                follower = new Follower<T>(method);
                 _disposableFollowers.Add(follower);
             }
             
             var currentCall = GetCall<T>();
             
-            if (follower.Calls.Contains(currentCall))
-                throw new Exception($"You are trying set method {method.Method.Name} on {method.Target.GetType().Name} as follower to call {typeof(T)}, but this method already follow this call");
+            if (!follower.Calls.Contains(currentCall)) 
+                follower.AddCall(currentCall);
             
-            follower.AddCall(currentCall);
             currentCall.AddFollower(method);
             
             return follower;
@@ -103,28 +101,33 @@ namespace NocInjector.Calls
 
             if (currentCall.Disposed)
             {
-                foreach (var disposableFollower in _disposableFollowers.Where(f => ToFollower<T>(f).Calls.Contains(currentCall)))
-                {
-                    var follower = ToFollower<T>(disposableFollower);
-                    follower.RemoveCall(currentCall);
-                }
-                
-                _callsContainer.Remove(currentCall);
+                ClearDisposed(currentCall);
                 return;
             }
-            
+
             currentCall.InvokeMethods(value);
+        }
+
+        private void ClearDisposed<T>(CallInfo<T> currentCall)
+        {
+            foreach (var disposableFollower in _disposableFollowers.Where(f => ToFollower<T>(f).Calls.Contains(currentCall)))
+            {
+                var follower = ToFollower<T>(disposableFollower);
+                follower.RemoveCall(currentCall);
+            }
+                
+            _callsContainer.Remove(currentCall);
         }
 
         private bool GetFollower<T>(Action method, out DisposableFollower<T> follower)
         {
-            follower = _disposableFollowers.OfType<NonParamFollower<T>>().FirstOrDefault(f => f.Method == method);
+            follower = _disposableFollowers.OfType<VoidFollower<T>>().FirstOrDefault(f => f.Method == method);
             return follower is not null;
         }
 
         private bool GetFollower<T>(Action<T> method, out DisposableFollower<T> follower)
         {
-            follower = _disposableFollowers.OfType<ParamFollower<T>>().FirstOrDefault(f => f.Method == method);
+            follower = _disposableFollowers.OfType<Follower<T>>().FirstOrDefault(f => f.Method == method);
             return follower is not null;
         }
 

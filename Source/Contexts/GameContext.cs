@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+
 using UnityEngine;
 
 namespace NocInjector
@@ -19,18 +18,7 @@ namespace NocInjector
         {
             if (lifetime is ContextLifetime.Project)
                 DontDestroyOnLoad(gameObject);
-        }
-        protected override void Install()
-        {
-            try
-            {
-                foreach (var installer in installers.Where(i => i is not null)) 
-                    installer.Initialize(Container);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-            }
-        }
+        } 
+        
     }
 }

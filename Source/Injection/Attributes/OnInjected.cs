@@ -3,7 +3,7 @@
 namespace NocInjector
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class OnInjected : Attribute
+    public sealed class OnInjected : Attribute
     {
         public object[] Parameters { get; }
         
