@@ -8,7 +8,7 @@ namespace NocInjector
         /// <summary>
         /// Injected tags
         /// </summary>
-        public string[] Tags { get; }
+        public string Tag { get; }
         
         /// <summary>
         /// The type of context from which the dependency will be injected. By default, All
@@ -23,7 +23,7 @@ namespace NocInjector
         
         public Inject(string tag = null, ContextType contextType = ContextType.All)
         {
-            Tags = new[] { tag };
+            Tag = tag;
             ContextType = contextType;
         }
         
@@ -34,19 +34,8 @@ namespace NocInjector
         
         public Inject(ContextType contextType = ContextType.All)
         {
-            Tags = Array.Empty<string>();
+            Tag = null;
             ContextType = contextType;
-        }
-
-        public Inject(ContextType contextType, params string[] tags)
-        {
-            ContextType = contextType;
-            Tags = tags;
-        }
-
-        public Inject(params string[] tags)
-        {
-            Tags = tags;
         }
         
         /// <summary>
@@ -54,7 +43,7 @@ namespace NocInjector
         /// </summary>
         public Inject()
         {
-            Tags = Array.Empty<string>();
+            Tag = null;
             ContextType = ContextType.All;
         }
         

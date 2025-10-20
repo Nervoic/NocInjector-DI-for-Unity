@@ -1,6 +1,4 @@
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using NocInjector.Calls;
 using UnityEngine;
@@ -10,11 +8,7 @@ namespace NocInjector
     public class ContextManager : MonoBehaviour
     {
         public ContextInjectionManager InjectionManager { get; private set; }
-        
-        /// <summary>
-        /// The CallView used by the library.
-        /// </summary>
-        private readonly CallView SystemView = new();
+        private readonly CallView _systemView = new();
         private void Awake()
         {
             InitializeInjector();
@@ -23,13 +17,13 @@ namespace NocInjector
             InjectToObjects();
         }
 
-        private void InitializeInjector() => InjectionManager = new ContextInjectionManager(SystemView);
+        private void InitializeInjector() => InjectionManager = new ContextInjectionManager(_systemView);
         private void InstallContexts()
         {
             var contexts = FindObjectsByType<GameContext>(FindObjectsSortMode.None);
             
             foreach (var context in contexts)
-                context.InstallContext(SystemView);
+                context.InstallContext(_systemView);
         }
 
         private void InjectToObjects()
@@ -48,7 +42,7 @@ namespace NocInjector
         public void InstallObject(GameObject contextObject)
         {
             var context = contextObject.GetComponent<Context>();
-            context?.InstallContext(SystemView);
+            context?.InstallContext(_systemView);
         }
     }
 }

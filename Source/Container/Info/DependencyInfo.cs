@@ -6,7 +6,9 @@ namespace NocInjector
     internal class DependencyInfo
     {
         public Type DependencyType { get; }
+
         public Type ImplementsInterface { get; set; }
+
         public string DependencyTag { get; set; }
         public object Instance { get; set; }
         public DependencyObject GameObject { get; set; }
@@ -19,5 +21,6 @@ namespace NocInjector
             Instance = instance;
             GameObject = gameObject;
         }
+        
     }
 }

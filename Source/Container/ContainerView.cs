@@ -7,73 +7,73 @@ namespace NocInjector
     {
         private readonly GameContainer _gameContainer;
 
+        private readonly object _containerLock = new();
+
         internal ContainerView(CallView systemView)
         {
             _gameContainer = new GameContainer(systemView);
         }
-
+        
         /// <summary>
         /// Registers a type in the container.
         /// </summary>
-        /// <param name="typeToRegister">The type to register.</param>
         /// <param name="lifetime">Lifetime of the dependency. Default is Singleton</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public ContainerRegister Register(Type typeToRegister, Lifetime lifetime = Lifetime.Singleton)
+        public FluentRegistration<TDependencyType> Register<TDependencyType>(Lifetime lifetime = Lifetime.Singleton)
         {
-            if (typeToRegister.IsAbstract)
-                throw new Exception($"Cannot register abstract class {typeToRegister.Name}");
-            
-            var newDependency = _gameContainer.Register(typeToRegister, lifetime);
-            
-            return new ContainerRegister(_gameContainer, newDependency);
+            lock (_containerLock)
+            {
+                var dependencyType = typeof(TDependencyType);
+                
+                if (dependencyType.IsAbstract)
+                    throw new Exception($"Cannot register abstract class {dependencyType.Name}");
 
+                var newDependency = _gameContainer.Register<TDependencyType>(lifetime);
+
+                return new FluentRegistration<TDependencyType>(_gameContainer, newDependency);
+            }
         }
-
-        /// <summary>
-        /// Registers a type in the container.
-        /// </summary>
-        /// <param name="lifetime">Lifetime of the dependency. Default is Singleton</param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public ContainerRegister Register<T>(Lifetime lifetime = Lifetime.Singleton) => Register(typeof(T), lifetime);
         
         /// <summary>
         /// Returns a dependency of a specific type from the container.
         /// </summary>
-        /// <param name="objectToResolve">The type of dependency to resolve</param>
+        /// <param name="dependencyType">The type of dependency to resolve</param>
         /// <param name="tag">The ID of the dependency to resolve</param>
         /// <returns></returns>
-        public object Resolve(Type objectToResolve, string tag = null)
+        public object Resolve(Type dependencyType, string tag = null)
         {
-            _gameContainer.TryResolve(objectToResolve, tag, out var instance);
-
-            if (instance is null)
-                throw new Exception($"Dependency {objectToResolve.Name} with id {tag} is not found.");
-
-            return instance;
+            lock (_containerLock)
+            {
+                return dependencyType is null 
+                    ? throw new ArgumentNullException(nameof(dependencyType)) 
+                    : _gameContainer.Resolve(dependencyType, tag);
+            }
         }
 
         /// <summary>
         /// Returns a dependency of a specific type from the container.
         /// </summary>
-        /// <param name="id">The ID of the dependency to resolve</param>
+        /// <param name="tag">The ID of the dependency to resolve</param>
         /// <returns></returns>
-        public T Resolve<T>(string id = null) => (T)Resolve(typeof(T), id);
+        public T Resolve<T>(string tag = null) => (T)Resolve(typeof(T), tag);
         
         /// <summary>
         /// Returns a dependency of a specific type from the container.
         /// </summary>
-        /// <param name="objectToResolve">The type of dependency to resolve</param>
+        /// <param name="dependencyType">The type of dependency to resolve</param>
         /// <param name="tag">The ID of the dependency to resolve</param>
         /// <param name="instance"></param>
         /// <returns></returns>
 
-        public bool TryResolve(Type objectToResolve, string tag, out object instance)
+        public bool TryResolve(Type dependencyType, string tag, out object instance)
         {
-            _gameContainer.TryResolve(objectToResolve, tag, out instance);
-            
-            return instance is not null;
+            lock (_containerLock)
+            {
+                return dependencyType is null 
+                    ? throw new ArgumentNullException(nameof(dependencyType)) 
+                    : _gameContainer.TryResolve(dependencyType, tag, out instance);
+            }
         }
         
         /// <summary>
@@ -85,9 +85,10 @@ namespace NocInjector
 
         public bool TryResolve<T>(string tag, out T instance)
         {
-            _gameContainer.TryResolve(tag, out instance);
-            
-            return instance is not null;
+            lock (_containerLock)
+            {
+                return _gameContainer.TryResolve(tag, out instance);
+            }
         }
     }
 }

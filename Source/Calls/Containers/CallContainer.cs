@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace NocInjector.Calls
 {
@@ -10,78 +9,66 @@ namespace NocInjector.Calls
     {
         private readonly List<object> _disposableFollowers = new();
         private readonly List<object> _callsContainer = new();
-        public IDisposable Follow<T>(Action method)
+        public IDisposable Follow<T>(Action method, bool autoRegisterCall)
         {
-            if (!HasCall<T>())
+            if (!HasCall<T>() && autoRegisterCall)
                 RegisterCall<T>();
-            
-            if (!GetFollower<T>(method, out var follower))
-            {
-                follower = new VoidFollower<T>(method);
-                _disposableFollowers.Add(follower);
-            }
+            else
+                throw new CallMissingException(typeof(T));
 
             var currentCall = GetCall<T>();
+            var follower = currentCall.AddFollower(method);
             
-            if (!follower.Calls.Contains(currentCall)) 
-                follower.AddCall(currentCall);
-            
-            currentCall.AddFollower(method);
+            if (!_disposableFollowers.Contains(follower))
+                _disposableFollowers.Add(follower);
             
             return follower;
         }
 
-        public IDisposable Follow<T>(Action<T> method)
+        public IDisposable Follow<T>(Action<T> method, bool autoRegisterCall)
         {
-            if (!HasCall<T>())
+            if (!HasCall<T>() && autoRegisterCall)
                 RegisterCall<T>();
-            
-            if (!GetFollower(method, out var follower))
-            {
-                follower = new Follower<T>(method);
-                _disposableFollowers.Add(follower);
-            }
-            
+            else
+                throw new CallMissingException(typeof(T));
+
             var currentCall = GetCall<T>();
+            var follower = currentCall.AddFollower(method);
             
-            if (!follower.Calls.Contains(currentCall)) 
-                follower.AddCall(currentCall);
-            
-            currentCall.AddFollower(method);
+            if (!_disposableFollowers.Contains(follower))
+                _disposableFollowers.Add(follower);
             
             return follower;
         }
 
         public void Unfollow<T>(Action method)
         {
-            if (!HasCall<T>())
-                throw new Exception($"Call {typeof(T).Name} is not registered or disposed");
+            if (!TryGetCall<T>(out var currentCall))
+                throw new CallMissingException(typeof(T));
             
-            var currentCall = GetCall<T>();
-            
-            if (!GetFollower<T>(method, out var follower)) return;
+            if (!TryGetFollower<T>(method, out var follower)) 
+                return;
             
             follower.RemoveCall(currentCall);
-            currentCall.RemoveFollower(method);
+            currentCall.RemoveFollower(follower);
         }
         
         public void Unfollow<T>(Action<T> method)
         {
-            if (!HasCall<T>())
-                throw new Exception($"Call {typeof(T).Name} is not registered or disposed");
+            if (!TryGetCall<T>(out var currentCall))
+                throw new CallMissingException(typeof(T));
             
-            var currentCall = GetCall<T>();
-            
-            if (!GetFollower(method, out var follower)) return;
+            if (!TryGetFollower(method, out var follower)) 
+                return;
             
             follower.RemoveCall(currentCall);
-            currentCall.RemoveFollower(method);
+            currentCall.RemoveFollower(follower);
         }
 
         public IDisposable RegisterCall<T>()
         {
             if (HasCall<T>())
-                throw new Exception($"{typeof(T)} call already registered");
+                return GetCall<T>();
             
             var newCall = new CallInfo<T>();
             _callsContainer.Add(newCall);
@@ -94,10 +81,8 @@ namespace NocInjector.Calls
         {
             var callType = typeof(T);
 
-            if (!HasCall<T>())
-                throw new Exception($"Call {callType.Name} is not registered or disposed");
-
-            var currentCall = GetCall<T>();
+            if (!TryGetCall<T>(out var currentCall))
+                throw new CallMissingException(callType);
 
             if (currentCall.Disposed)
             {
@@ -105,12 +90,12 @@ namespace NocInjector.Calls
                 return;
             }
 
-            currentCall.InvokeMethods(value);
+            currentCall.InvokeFollowers(value);
         }
 
         private void ClearDisposed<T>(CallInfo<T> currentCall)
         {
-            foreach (var disposableFollower in _disposableFollowers.Where(f => ToFollower<T>(f).Calls.Contains(currentCall)))
+            foreach (var disposableFollower in _disposableFollowers.Where(follower => ToFollower<T>(follower).ContainsCall(currentCall)))
             {
                 var follower = ToFollower<T>(disposableFollower);
                 follower.RemoveCall(currentCall);
@@ -119,24 +104,38 @@ namespace NocInjector.Calls
             _callsContainer.Remove(currentCall);
         }
 
-        private bool GetFollower<T>(Action method, out DisposableFollower<T> follower)
+        private bool TryGetFollower<T>(Action method, out DisposableFollower<T> follower)
         {
             follower = _disposableFollowers.OfType<VoidFollower<T>>().FirstOrDefault(f => f.Method == method);
+            
+            if (follower is not null && follower.Disposed)
+            {
+                _disposableFollowers.Remove(follower);
+                return TryGetFollower(method, out follower);
+            }
             return follower is not null;
         }
 
-        private bool GetFollower<T>(Action<T> method, out DisposableFollower<T> follower)
+        private bool TryGetFollower<T>(Action<T> method, out DisposableFollower<T> follower)
         {
             follower = _disposableFollowers.OfType<Follower<T>>().FirstOrDefault(f => f.Method == method);
+            if (follower is not null && follower.Disposed)
+            {
+                _disposableFollowers.Remove(follower);
+                return TryGetFollower(method, out follower);
+            }
             return follower is not null;
         }
-
         private DisposableFollower<T> ToFollower<T>(object follower) => follower as DisposableFollower<T>;
 
         private bool HasCall<T>() => _callsContainer.OfType<CallInfo<T>>().FirstOrDefault(call => call.CallType == typeof(T)) is not null;
-
+        
         private CallInfo<T> GetCall<T>() => _callsContainer.OfType<CallInfo<T>>().FirstOrDefault(call => call.CallType == typeof(T));
-        private CallInfo<T> ToCall<T>(object call) => call as CallInfo<T>;
+        private bool TryGetCall<T>(out CallInfo<T> call)
+        {
+            call = _callsContainer.OfType<CallInfo<T>>().FirstOrDefault(call => call.CallType == typeof(T));
+            return call is not null;
+        }
 
 
     }

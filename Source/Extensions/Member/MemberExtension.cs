@@ -17,13 +17,9 @@ namespace NocInjector
             switch (member)
             {
                 case FieldInfo field:
-                    if (field.GetValue(obj) is not null)
-                        return;
                     field.SetValue(obj, value);
                     break;
                 case PropertyInfo property:
-                    if (property.GetValue(obj) is not null)
-                        return;
                     property.SetValue(obj, value);
                     break;
                 default: throw new Exception("SetValue can only be used on fields or properties. Please check the MemberInfo type before calling this method.");

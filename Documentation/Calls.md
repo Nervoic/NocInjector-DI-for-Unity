@@ -1,29 +1,28 @@
 ﻿## Description
-The call system
+An event system with internal unsubscription control.
 
 ## The main thing
-- Creation of custom calls, analogous to events in C#
+- Creation of custom "calls", analogous to events in C#
 - Automatic event monitoring
 - Connection with contexts, the ability to link subscriptions from different parts of the game
-- Create and register Call Views in the areas you need
+- CallField - represents a field or property, when changing the value of which all subscribers will be called.
 
 ## Registration of calls
+We need to register the CallView in the container you need via the Installer.
 
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install() 
+    public void Install(ContainerView container) 
     {
-        Register<CallView>;
+        container.Register<CallView>;
     }
 }
 ```
-
-Here we register the CallView, later we need to move this Installer to the context we need.
 
 
 ## Usage
-We need to implement CallView. To subscribe or unsubscribe, we use Follow or Unfollow, and to call Call
+We need to implement CallView;
 ```csharp
 public class CallsUser : MonoBehaviour
 {
@@ -43,57 +42,30 @@ public class CallsUser : MonoBehaviour
     }
 }
 ```
+To subscribe to a call, use the Follow method of the CallView class, and to unsubscribe, use the Unfollow method.
 
-## Notes
-- A method called with a Call can accept only one type of parameter.
+- The Follow method
+  Returns IDisposable. When Disposing, the method will unsubscribe from all calls that it is subscribed to.
 
+We can also manually register the call and get an IDisposable, when we call Dispose, all methods will be unsubscribed from the call.
 
----
-## Описание
-Система звонков
+## CallField
+It represents a field, when updating the value of which all subscribers monitoring this field will be called.
 
-## Главное
-- Создание кастомных звонков, аналог событиям в C#
-- Автоматический контроль событий
-- Связь с контекстами, возможность связывать подписки из разных частей игры
-- Создание и регистрация View-ов на звонки в нужных вам областях
-
-## Регистрация звонков
-
-```csharp
-public class MyInstaller : Installer
-{
-    public void Install() 
-    {
-        Register<CallView>;
-    }
-}
-```
-
-Тут мы регистрируем CallView, позже этот Installer нам нужно перенести в необходимый нам контекст.
-
-
-## Использование
-Нам необходимо внедрить CallView. Для подписки или отписки используем Follow или Unfollow, а для вызова Call
 ```csharp
 public class CallsUser : MonoBehaviour
 {
-    [Inject] private CallView _view;
+    [Inject] private CallField<int> _balance = new(10);
     
     [OnInjected] private void Follow() 
     {
-        _view.Follow<CallInfo>(OnCall)
-        _view.Call<CallInfo>()
-        
-        _view.Unfollow<CallInfo>(OnCall)
+        _balance.Follow(BalanceChanged);
     }
     
-    private void OnCall() 
+    private void BalanceChanged(int newBalance) 
     {
-        
+        Debug.Log(newBalance);
     }
 }
 ```
-
-## Примечания
-- Метод, вызываемый с помощью Call может принимать параметр только одного типа.
+The same methods are used for subscriptions and unsubscriptions as in CallView.

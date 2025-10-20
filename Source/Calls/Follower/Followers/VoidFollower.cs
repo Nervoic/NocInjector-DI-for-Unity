@@ -10,13 +10,5 @@ namespace NocInjector.Calls
         {
             Method = method;
         }
-
-        public override void Dispose()
-        {
-            foreach (var call in Calls)
-            {
-                call.RemoveFollower(Method);
-            }
-        }
     }
 }

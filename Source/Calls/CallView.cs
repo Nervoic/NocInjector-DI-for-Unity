@@ -6,6 +6,8 @@ namespace NocInjector.Calls
     public sealed class CallView
     {
         private readonly CallContainer _container = new();
+
+        private readonly object _callLock = new();
         
         /// <summary>
         /// Registers the call in the container.
@@ -14,35 +16,44 @@ namespace NocInjector.Calls
         /// <returns></returns>
         public IDisposable RegisterCall<T>()
         {
-            return _container.RegisterCall<T>();
+            lock (_callLock)
+            {
+                return _container.RegisterCall<T>();
+            }
         }
         
         /// <summary>
         /// Assigns a call to a method that will be called when the call is made.
         /// </summary>
         /// <param name="method">The method that subscribes to the call</param>
+        /// <param name="autoRegisterCall">Indicates whether to automatically register a call if it is not already registered</param>
         /// <typeparam name="T">The type of the call</typeparam>
         /// <exception cref="Exception"></exception>
-        public IDisposable Follow<T>(Action method)
+        public IDisposable Follow<T>(Action method, bool autoRegisterCall = true)
         {
-            if (method is null)
-                throw new Exception($"Cannot pass a null method when follow");
-            
-            return _container.Follow<T>(method);
+            lock (_callLock)
+            {
+                return method is null 
+                    ? throw new ArgumentNullException(nameof(method)) 
+                    : _container.Follow<T>(method, autoRegisterCall);
+            }
         }
         
         /// <summary>
         /// Assigns a call to a method that will be called when the call is made.
         /// </summary>
         /// <param name="method">The method that subscribes to the call</param>
+        /// <param name="autoRegisterCall">Indicates whether to automatically register a call if it is not already registered</param>
         /// <typeparam name="T">The type of the call</typeparam>
         /// <exception cref="Exception"></exception>
-        public IDisposable Follow<T>(Action<T> method)
+        public IDisposable Follow<T>(Action<T> method, bool autoRegisterCall = true)
         {
-            if (method is null)
-                throw new Exception($"Cannot pass a null method when follow");
-            
-            return _container.Follow(method);
+            lock (_callLock)
+            {
+                return method is null 
+                    ? throw new ArgumentNullException(nameof(method)) 
+                    : _container.Follow(method, autoRegisterCall);
+            }
         }
         
         /// <summary>
@@ -53,10 +64,13 @@ namespace NocInjector.Calls
         /// <exception cref="Exception"></exception>
         public void Unfollow<T>(Action method)
         {
-            if (method is null)
-                throw new Exception($"Unable to pass a null method when follow ends");
-            
-            _container.Unfollow<T>(method);
+            lock (_callLock)
+            {
+                if (method is null)
+                    throw new ArgumentNullException(nameof(method));
+
+                _container.Unfollow<T>(method);
+            }
         }
         
         
@@ -68,10 +82,13 @@ namespace NocInjector.Calls
         /// <exception cref="Exception"></exception>
         public void Unfollow<T>(Action<T> method)
         {
-            if (method is null)
-                throw new Exception($"Unable to pass a null method when follow ends");
-            
-            _container.Unfollow(method);
+            lock (_callLock)
+            {
+                if (method is null)
+                    throw new ArgumentNullException(nameof(method));
+
+                _container.Unfollow(method);
+            }
         }
         
         /// <summary>
@@ -81,7 +98,10 @@ namespace NocInjector.Calls
         /// <typeparam name="T">The type of the call</typeparam>
         public void Call<T>(T value = default)
         {
-            _container.Call(value);
+            lock (_callLock)
+            {
+                _container.Call(value);
+            }
         }
     }
 }

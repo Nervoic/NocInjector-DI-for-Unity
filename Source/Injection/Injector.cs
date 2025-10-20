@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using NocInjector.Calls;
+using UnityEngine;
 
 namespace NocInjector
 {
@@ -11,6 +12,14 @@ namespace NocInjector
         internal Injector(CallView systemView)
         {
             systemView.Follow<DependencyCreatedCall>(InjectToCreated);
+        }
+
+        public void InjectTo(GameObject injectableObject)
+        {
+            var components = injectableObject.GetComponents<Component>().Where(c => c is not null).ToArray();
+            
+            foreach (var component in components)
+                InjectTo(component, component.GetComponent<GameContext>());
         }
         
         public void InjectTo(object instance, GameContext context = null)
@@ -22,7 +31,7 @@ namespace NocInjector
             foreach (var injectableMember in injectableMembers)
             {
                 var currentInjector = _injectorFactory.GetInjector(injectableMember.GetInjectorType());
-                currentInjector.Inject(injectableMember, instance, context);
+                currentInjector.Inject(injectableMember, instance, context?.Container);
             }
                     
             InvokeInjectedMethods(instance);

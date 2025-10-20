@@ -6,9 +6,9 @@ using Object = UnityEngine.Object;
 
 namespace NocInjector
 {
-    internal abstract class MemberInjector : IInjector
+    internal abstract class MemberInjector
     {
-        public abstract InjectorType InjectionType { get; }
+        public abstract InjectorType InjectorType { get; protected set; }
         private GameContext[] _gameContexts;
 
         internal MemberInjector()
@@ -16,61 +16,57 @@ namespace NocInjector
             InitContexts();
         }
 
-        public abstract void Inject(MemberInfo injectableMember, object instance, Context context);
+        public abstract void Inject(MemberInfo injectableMember, object instance, ContainerView container = null);
 
-        protected object GetDependency(Type dependencyType, Inject injectAttr, ContainerView container = null)
+        protected object GetDependency(Type dependencyType, Inject injectAttr, ContainerView container)
         {
-            var tags = injectAttr.Tags;
             var contextLifetime = injectAttr.ContextType;
 
-            var dependencyInstance = ResolveDependency(dependencyType, tags, container);
-
-            if (dependencyInstance is not null || contextLifetime == ContextType.Object) return dependencyInstance;
-
+            if ((GetDependencyFromContainer(dependencyType, injectAttr, container, out var dependencyInstance) && contextLifetime == ContextType.Object) || contextLifetime == ContextType.Object)
+                return dependencyInstance
+                       ?? throw new Exception($"Unable to retrieve dependency {dependencyType.Name}. It may not be registered or you may have specified the injection parameters incorrectly");
+            
             var contexts = GetContexts(contextLifetime);
-            FindDependencyInContexts(dependencyType, tags, contexts, out dependencyInstance);
+                
+            GetDependencyFromContexts(dependencyType, injectAttr, contexts, out dependencyInstance);
 
-            // if (dependencyInstance is null)
-            //     throw new Exception($"Unable to retrieve dependency {dependencyType.Name}. It may not be registered or you may have specified the injection parameters incorrectly");
-
-            return dependencyInstance;
-        } 
+            return dependencyInstance 
+                  ?? throw new Exception($"Unable to retrieve dependency {dependencyType.Name}. It may not be registered or you may have specified the injection parameters incorrectly");
+        }
         
-        
-        private void FindDependencyInContexts(Type dependencyType, string[] tags,  GameContext[] contexts, out object dependencyInstance)
+        private bool GetDependencyFromContainer(Type dependencyType, Inject injectAttr, ContainerView container, out object dependencyInstance)
         {
+            var tag = injectAttr.Tag;
+            
+            dependencyInstance = ResolveDependency(dependencyType, tag, container);
+            return dependencyInstance is not null;
+        }
+        
+        private bool GetDependencyFromContexts(Type dependencyType, Inject injectAttr,  GameContext[] contexts, out object dependencyInstance)
+        {
+            dependencyInstance = null;
+            var tag = injectAttr.Tag;
+            
             foreach (var context in contexts)
             {
                 var currentContainer = context.Container;
-                dependencyInstance = ResolveDependency(dependencyType, tags, currentContainer);
+                dependencyInstance = ResolveDependency(dependencyType, tag, currentContainer);
 
                 if (dependencyInstance is not null)
-                    return;
+                    return true;
             }
-
-            dependencyInstance = null;
+            
+            return false;
         }
 
-        private object ResolveDependency(Type dependencyType, string[] tags, ContainerView container)
+        private object ResolveDependency(Type dependencyType, string tag, ContainerView container)
         {
             if (container is null)
                 return null;
-
-            if (!tags.Any())
-            {
-                container.TryResolve(dependencyType, null, out var instance);
-                return instance;
-            }
             
-            foreach (var currentTag in tags)
-            {
-                container.TryResolve(dependencyType, currentTag, out var instance);
-                
-                if (instance is not null) 
-                    return instance;
-            }
+            container.TryResolve(dependencyType, tag, out var instance);
 
-            return null;
+            return instance;
         }
         
         private GameContext[] GetContexts(ContextType contextType)
@@ -88,6 +84,7 @@ namespace NocInjector
         }
 
         private void InitContexts() => _gameContexts = Object.FindObjectsByType<GameContext>(FindObjectsSortMode.None)
-            .Where(context => context.Lifetime != ContextLifetime.Object).ToArray();
+            .Where(context => context.Lifetime != ContextLifetime.Object)
+            .ToArray();
     }
 }

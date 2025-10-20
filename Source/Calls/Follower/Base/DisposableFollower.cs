@@ -5,18 +5,24 @@ namespace NocInjector.Calls
 {
     internal abstract class DisposableFollower<T> : IDisposable
     {
-        public List<CallInfo<T>> Calls { get; } = new();
+        public bool Disposed { get; private set; }
+        private List<CallInfo<T>> Calls { get; } = new();
 
-        public void AddCall(CallInfo<T> call)
+        public void AddCall(CallInfo<T> call) => Calls.Add(call);
+
+        public void RemoveCall(CallInfo<T> call) => Calls.Remove(call);
+
+        public bool ContainsCall(CallInfo<T> call) => Calls.Contains(call);
+
+        public void Dispose()
         {
-            Calls.Add(call);
-        }
+            if (Disposed) return;
+            foreach (var call in Calls)
+            {
+                call.RemoveFollower(this);
+            }
 
-        public void RemoveCall(CallInfo<T> call)
-        {
-            Calls.Remove(call);
+            Disposed = true;
         }
-
-        public abstract void Dispose();
     }
 }

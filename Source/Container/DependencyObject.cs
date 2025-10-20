@@ -10,7 +10,7 @@ namespace NocInjector
         private readonly CallView _objectView = new();
         
 
-        public void Follow<T>(Action<T> containerFollower) => _objectView.Follow(containerFollower);
+        public void FollowDestroy<T>(Action<T> containerFollower) => _objectView.Follow(containerFollower);
         private void OnDestroy() => _objectView.Call(new DependencyObjectDestroyedCall(this));
     }
 }

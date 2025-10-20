@@ -5,12 +5,12 @@ namespace NocInjector
 {
     internal class LifetimeFactory
     {
-        private readonly List<ILifetimeImplementation> _implementations = new()
+        private readonly List<LifetimeImplementation> _implementations = new()
         {
             new SingletonImplementation(), 
             new TransientImplementation()
         };
 
-        public ILifetimeImplementation GetLifetime(Lifetime lifetime) => _implementations.FirstOrDefault(implementation => implementation.Lifetime == lifetime);
+        public LifetimeImplementation GetLifetime(Lifetime lifetime) => _implementations.FirstOrDefault(implementation => implementation.Lifetime == lifetime);
     }
 }

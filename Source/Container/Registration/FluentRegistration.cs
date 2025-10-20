@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace NocInjector
 {
-    public class ContainerRegister
+    public class FluentRegistration<TDependencyType>
         {
             private readonly GameContainer _container;
             private readonly DependencyInfo _currentDependency;
 
-            private Type DependencyType => _currentDependency.DependencyType;
+            private Type DependencyType => typeof(TDependencyType);
 
-            internal ContainerRegister(GameContainer container, DependencyInfo currentDependency)
+            internal FluentRegistration(GameContainer container, DependencyInfo currentDependency)
             {
                 _container = container;
                 _currentDependency = currentDependency;
@@ -21,7 +21,7 @@ namespace NocInjector
             /// </summary>
             /// <param name="gameObject"></param>
             /// <returns></returns>
-            public ContainerRegister AsComponentOn(GameObject gameObject)
+            public FluentRegistration<TDependencyType> AsComponentOn(GameObject gameObject)
             {
                 if (!DependencyType.IsSubclassOf(typeof(Component)))
                     throw new InvalidOperationException( $"Cannot register the service {DependencyType.Name} as a component on {gameObject.name}");
@@ -38,9 +38,29 @@ namespace NocInjector
             /// </summary>
             /// <param name="tag">Tag for the dependency.</param>
 
-            public ContainerRegister WithTag(string tag)
+            public FluentRegistration<TDependencyType> WithTag(string tag)
             {
-                _container.ChangeTag(_currentDependency, tag);
+                _container.SetTag(_currentDependency, tag);
+                return this;
+            }
+            
+            /// <summary>
+            /// Set instance to this dependency
+            /// </summary>
+            /// <param name="instance">Dependency instance</param>
+            /// <returns></returns>
+            /// <exception cref="Exception"></exception>
+            public FluentRegistration<TDependencyType> WithInstance(TDependencyType instance)
+            {
+                if (instance is null)
+                    throw new Exception($"Cannot set an instance for {_currentDependency.DependencyType.Name} as null");
+
+                if (DependencyType.IsSubclassOf(typeof(Component)))
+                    throw new Exception($"Cannot set an instance for the component {DependencyType.Name} when registering. Use {nameof(AsComponentOn)}");
+
+                var instanceType = typeof(TDependencyType);
+                _container.SetInstance(_currentDependency, instance);
+                
                 return this;
             }
             
@@ -59,11 +79,11 @@ namespace NocInjector
             /// <summary>
             /// Uses the type as an interface implementation
             /// </summary>
-            /// <typeparam name="T">The type of the interface to be implemented</typeparam>
+            /// <typeparam name="TInterfaceType">The type of the interface to be implemented</typeparam>
             /// <returns></returns>
-            public ContainerRegister AsImplementation<T>()
+            public FluentRegistration<TDependencyType> AsImplementation<TInterfaceType>()
             {
-                var interfaceType = typeof(T);
+                var interfaceType = typeof(TInterfaceType);
                 
                 if (!interfaceType.IsInterface)
                     throw new InvalidOperationException($"You are trying to register {DependencyType.Name} as an implementation of {interfaceType.Name}, but {interfaceType.Name} is not an interface.");
@@ -71,7 +91,7 @@ namespace NocInjector
                 if (!interfaceType.IsAssignableFrom(DependencyType))
                     throw new InvalidOperationException($"{DependencyType.Name} service does not implement the {interfaceType.Name} interface, and cannot be registered.");
                 
-                _container.ChangeImplementation(_currentDependency, interfaceType);
+                _container.SetImplementation<TInterfaceType>(_currentDependency);
                 return this;
             }
         }

@@ -8,75 +8,124 @@ namespace NocInjector
 {
     internal abstract class Container
     {
-        protected abstract Dictionary<DependencyInfo, ILifetimeImplementation> DependenciesContainer { get; set; }
+        protected abstract Dictionary<DependencyInfo, LifetimeImplementation> DependenciesContainer { get; set; }
         protected abstract CallView SystemView { get; }
         protected abstract LifetimeFactory LifetimeFactory { get; }
+
+        public abstract DependencyInfo Register<T>(Lifetime lifetime);
         
-        public abstract DependencyInfo Register(Type typeToRegister, Lifetime lifetime);
-        public DependencyInfo Register<T>(Lifetime lifetime) => Register(typeof(T), lifetime);
-        
-        public abstract object Resolve(Type dependencyToResolve, string tag = null);
+        public abstract object Resolve(Type dependencyType, string tag);
         public T Resolve<T>(string tag = null) => (T)Resolve(typeof(T), tag);
-        
         public void CancelRegister(DependencyInfo dependency) => DependenciesContainer.Remove(dependency);
         
-        public bool TryResolve(Type objectToResolve, string tag, out object instance)
+        public bool TryResolve(Type dependencyType, string tag, out object instance)
         {
-            instance = Has(objectToResolve, tag) ? Resolve(objectToResolve, tag) : null;
-            
+            instance = Has(dependencyType, tag)
+                ? Resolve(dependencyType, tag)
+                : null;
+
             return instance is not null;
         }
 
         public bool TryResolve<T>(string tag, out T instance)
         {
-            instance = Has(typeof(T), tag) ? Resolve<T>(tag) : default;
+            instance = Has(typeof(T), tag) 
+                ? Resolve<T>(tag) 
+                : default;
             
             return instance is not null;
         }
 
-        public void ChangeImplementation(DependencyInfo dependency, Type interfaceType)
+        public void SetImplementation<TInterfaceType>(DependencyInfo dependency)
         {
-            dependency.ImplementsInterface = interfaceType;
+            dependency.ImplementsInterface = typeof(TInterfaceType);
         }
 
-        public void ChangeTag(DependencyInfo dependency, string tag)
+        public void SetTag(DependencyInfo dependency, string tag)
         {
             MoreTagsValidate(dependency.DependencyType, tag);
-            
+
             dependency.DependencyTag = tag;
         }
 
-        protected void SetInstance(DependencyInfo dependency, object instance)
+        public void SetInstance(DependencyInfo dependency, object instance)
         {
             dependency.Instance = instance;
         }
 
-        protected DependencyInfo GetDependency(Type dependencyType, string tag = null)
+        protected bool TryGetDependency(Type dependencyType, string tag, out DependencyInfo dependency)
         {
-            return dependencyType.IsInterface 
-                ? DependenciesContainer.FirstOrDefault(o => 
-                    o.Key.ImplementsInterface == dependencyType && o.Key.DependencyTag == tag).Key 
-                : DependenciesContainer.FirstOrDefault(o => 
-                    o.Key.DependencyType == dependencyType && o.Key.DependencyTag == tag).Key;
+            dependency = DependenciesContainer.FirstOrDefault(dependency => 
+                (dependency.Key.DependencyType == dependencyType || dependency.Key.ImplementsInterface == dependencyType) &&
+                dependency.Key.DependencyTag == tag).Key;
+            
+            return dependency is not null;
         }
         
-        private bool Has(Type typeToCheck, string tag = null) => DependenciesContainer.FirstOrDefault(dependency => 
-            (dependency.Key.DependencyType == typeToCheck || dependency.Key.ImplementsInterface == typeToCheck) && 
-            dependency.Key.DependencyTag == tag).Key is not null;
-        
-        protected void ResolveValidate(Type dependencyToResolve, string tag)
+        protected bool TryGetDependencies(Type dependencyType, string tag, out DependencyInfo[] dependencies)
         {
-            MoreRegistrationsValidate(dependencyToResolve, tag);
+            var dependenciesInfo = DependenciesContainer.Where(dependency =>
+                dependency.Key.DependencyType == dependencyType ||
+                dependency.Key.ImplementsInterface == dependencyType);
+
+            if (tag is not null)
+            {
+                dependenciesInfo = dependenciesInfo.Where(dependency =>
+                    dependency.Key.DependencyTag == tag);
+            }
             
-            if (Has(dependencyToResolve, tag)) return;
+            dependencies = dependenciesInfo.Select(dependency => dependency.Key).ToArray();
+            return dependencies.Length > 0;
+        }
+
+        private bool Has(Type type, string tag)
+        {
+            var isArray = type.IsArray;
+            var dependencyType = isArray ? type.GetElementType() : type;
+
+            if (isArray && tag is null)
+                return Has(type);
             
-            if (dependencyToResolve.IsSubclassOf(typeof(Component)))
-                throw new Exception($"{dependencyToResolve.Name} is not registered in the container, or the GameObject that the component belonged to has been deleted.");
+            var hasDependency = DependenciesContainer.FirstOrDefault(dependency =>
+                (dependency.Key.DependencyType == dependencyType || dependency.Key.ImplementsInterface == dependencyType) &&
+                dependency.Key.DependencyTag == tag).Key is not null;
+
+            return hasDependency;
+        }
+
+        private bool Has(Type type)
+        {
+            var dependencyType = type.IsArray ? type.GetElementType() : type;
+            
+            var hasDependency = DependenciesContainer.FirstOrDefault(dependency =>
+                dependency.Key.DependencyType == dependencyType ||
+                dependency.Key.ImplementsInterface == dependencyType).Key is not null;
+
+            return hasDependency;
+        }
+
+        protected void ResolveValidate(Type dependencyType, string tag)
+        {
+            if (dependencyType.IsSubclassOf(typeof(Component)))
+            {
+                if (Has(dependencyType) && tag is null)
+                    throw new Exception($"The component {dependencyType.Name} is not registered with Null-tag, but registered with other tags, or or the GameObject that the component belonged to has been deleted");
                 
-            if (dependencyToResolve.IsInterface)
-                throw new Exception($"The interface {dependencyToResolve.Name} is not implemented by any class with the tag {tag ?? "{Null}"}");
-                
-            throw new Exception($"{dependencyToResolve.Name} is not registered in the container. Register it before resolving");
+                throw new Exception($"{dependencyType.Name} component is not registered in the container, or the GameObject that the component belonged to has been deleted.");
+            }
+
+            if (dependencyType.IsInterface)
+            {
+                if (Has(dependencyType) && tag is null)
+                    throw new Exception($"The interface {dependencyType.Name} is not implemented with Null-tag, but implemented with other tags");
+                    
+                throw new Exception($"The interface {dependencyType.Name} is not implemented by any class with the tag {tag ?? "{Null}"}");
+            }
+
+            if (Has(dependencyType) && tag is null)
+                throw new Exception($"The dependency {dependencyType.Name} is not registered with Null-tag, but registered with other tags");
+            
+            throw new Exception($"{dependencyType.Name} is not registered in the container with tag {tag}. Register it before resolving");
         }
 
         private void MoreTagsValidate(Type dependencyType, string tag)
@@ -85,7 +134,7 @@ namespace NocInjector
                 throw new Exception($"Dependency {dependencyType.Name} with tag {tag ?? "Null"} already registered in the container. Use other tag");
         }
 
-        private void MoreRegistrationsValidate(Type interfaceType, string tag)
+        protected void MoreRegistrationsValidate(Type interfaceType, string tag)
         {
             if (!interfaceType.IsInterface) return;
             

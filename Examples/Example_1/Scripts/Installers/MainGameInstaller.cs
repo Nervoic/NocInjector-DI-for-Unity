@@ -9,6 +9,7 @@ namespace NocInjector.Examples
         public override void Install(ContainerView container)
         {
             container.Register<CallView>();
+
         }
     }
 }

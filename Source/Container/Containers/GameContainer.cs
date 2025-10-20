@@ -8,7 +8,7 @@ namespace NocInjector
 {
     internal class GameContainer : Container
     {
-        protected override Dictionary<DependencyInfo, ILifetimeImplementation> DependenciesContainer { get; set; } = new();
+        protected override Dictionary<DependencyInfo, LifetimeImplementation> DependenciesContainer { get; set; } = new();
         protected override CallView SystemView { get; }
         protected override LifetimeFactory LifetimeFactory { get; } = new();
 
@@ -17,35 +17,68 @@ namespace NocInjector
             SystemView = systemView;
         }
         
-        public override DependencyInfo Register(Type typeToRegister, Lifetime lifetime)
+        public override DependencyInfo Register<TRegisteredType>(Lifetime lifetime)
         {
-            var newDependency = new DependencyInfo(typeToRegister);
-            var lifetimeImplementation = LifetimeFactory.GetLifetime(lifetime);
+            var registeredType = typeof(TRegisteredType);
             
-            if (!DependenciesContainer.TryAdd(newDependency, lifetimeImplementation))
-                throw new Exception($"Failed to add {typeToRegister.Name} to container. Dependency already exists in the container.");
+            var newDependency = new DependencyInfo(registeredType);
+            var lifetimeImplementation = LifetimeFactory.GetLifetime(lifetime);
+
+            DependenciesContainer.TryAdd(newDependency, lifetimeImplementation);
 
             return newDependency;
         }
         
-        public override object Resolve(Type dependencyToResolve, string tag = null)
+        public override object Resolve(Type dependencyType, string tag)
         {
-            ResolveValidate(dependencyToResolve, tag);
+            MoreRegistrationsValidate(dependencyType, tag);
 
-            var dependency = GetDependency(dependencyToResolve, tag);
-            var lifetime = DependenciesContainer[dependency];
+            if (dependencyType.IsArray)
+                return ResolveArray(dependencyType, tag);
             
+            if (!TryGetDependency(dependencyType, tag, out var dependency))
+                ResolveValidate(dependencyType, tag);
+            
+            var lifetime = DependenciesContainer[dependency];
+
             lifetime.Resolve(dependency, SystemView, out var instance);
             return instance;
         }
-        
+
+        private object ResolveArray(Type arrayType, string tag)
+        {
+            var dependencyType = arrayType.GetElementType();
+            
+            if (dependencyType is null)
+                return null;
+            
+            if (!TryGetDependencies(dependencyType, tag, out var dependencies))
+                ResolveValidate(dependencyType, tag);
+            
+            var dependenciesInstances = new object[dependencies.Length];
+            for (var i = 0; i < dependenciesInstances.Length; i++)
+            {
+                var currentDependency = dependencies[i];
+                
+                var lifetime = DependenciesContainer[currentDependency];
+
+                lifetime.Resolve(currentDependency, SystemView, out var instance);
+                dependenciesInstances[i] = instance;
+            }
+            
+            var instancesArray = Array.CreateInstance(dependencyType, dependenciesInstances.Length);
+            Array.Copy(dependenciesInstances, instancesArray, dependenciesInstances.Length);
+
+            return instancesArray;
+        }
+
         public void RegisterComponent(DependencyInfo dependency, GameObject gameObject)
         {
             if (!gameObject.TryGetComponent<DependencyObject>(out var dependencyObject))
                 dependencyObject = gameObject.AddComponent<DependencyObject>();
             
             dependency.GameObject = dependencyObject;
-            dependencyObject.Follow<DependencyObjectDestroyedCall>(DisposeObject);
+            dependencyObject.FollowDestroy<DependencyObjectDestroyedCall>(DisposeObject);
         }
 
         private void DisposeObject(DependencyObjectDestroyedCall call)

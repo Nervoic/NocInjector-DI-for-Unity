@@ -1,81 +1,76 @@
 ﻿## Description
-Registration of dependencies.
+Registering dependencies in containers.
 
 ## The main thing
 - Registration using implementation tags is available.
+- When registering, you can also specify an tag, an instance, an interface that implements a dependency, a GameObject on which the component is located, and a condition.
 
-## Registration of interfaces
-
+## AsImplementation
+Registers the dependency as an implementation of the interface.
 ```csharp
 public class MyInstaller : Installer
 {
-    public void Install(r) 
+    public void Install(ContainerView container) 
     {
-        Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
+        container.Register<MyService>(Lifetime.Singleton).AsImplementation<IMyService>;
     }
 }
 ```
 
-To register a dependency as an implementation of an interface, use the AsImplementation method for the registered dependency. To add an ID, use the withId method, which is available both for registering regular dependencies and for interface implementations.
-
-
-## Standard registration
-When registering components, you must explicitly specify the GameObject on which the component is located.
+## WithTag
+Adds an tag to the dependency.
 ```csharp
-public class MyServiceInstaller : Installer
+public class MyInstaller : Installer
 {
-    [SerializeField] private GameObject behaviourObject;
-    
-    public override void Install() 
+    public void Install(ContainerView container) 
     {
-        Register<MyBehaviour>().AsComponentOn(behaviourObject)
+        container.Register<MyService>(Lifetime.Transient).WithTag("MainImp")
     }
 }
 ```
-It can be registered in any context, as long as the BehaviourObject actually has a MyBehaviour component.
+
+## AsComponentOn
+Be sure to use it when registering components. Specifies which GameObject the component is located on.
+```csharp
+public class MyInstaller : GameInstaller
+{
+    [SerializeField] private GameObject _gameObj;
+    public void Install(ContainerView container) 
+    {
+        container.Register<MyService>().AsComponentOn(_gameObj);
+    }
+}
+```
+If the component is registered with Lifetime Transient, then each time it is requested, an instance of this GameObject will be created on the stage.
+
+## SetInstance
+Adds an instance to the registered dependency. It cannot be used when registering components.
+
+```csharp
+public class MyInstaller : GameInstaller
+{
+    [SerializeField] private GameObject _gameObj;
+    public void Install(ContainerView container) 
+    {
+        container.Register<MyService>().SetInstance(new MyService("Tag"))
+    }
+}
+```
+
+## If
+Cancels registration if the condition has not been met.
+
+```csharp
+public class MyInstaller : GameInstaller
+{
+    [SerializeField] private GameObject _gameObj;
+    public void Install(ContainerView container) 
+    {
+        container.Register<MyService>().If(3 > 2)
+    }
+}
+```
 
 
 ## Notes
 - Dynamic registration is available if you access the container in Runtime and register a dependency in it.
-
-
----
-## Описание
-Регистрация зависимостей.
-
-## Главное
-- Доступна регистрация с использованием тегов реализации.
-
-## Регистрация интерфейсов
-
-```csharp
-public class MyInstaller : Installer
-{
-    public void Install() 
-    {
-        Register<MyService>.AsImplementation<IMyService>.WithId("MainImp")
-    }
-}
-```
-
-Для регистрации зависимости как реализации какого либо интерфейса, используйте метод AsImplementation к регистрируемой зависимости. Для добавления ID используйте метод WithId, который доступен как для регистрации обычных зависимостей так и для реализаций интерфейсов.
-
-
-## Стандартная регистрация
-При регистрации компонентов необходимо явно указать GameObject, на котором данный компонент находится.
-```csharp
-public class MyServiceInstaller : Installer
-{
-    [SerializeField] private GameObject behaviourObject;
-    
-    public override void Install() 
-    {
-        Register<MyBehaviour>().AsComponentOn(behaviourObject)
-    }
-}
-```
-Можно регистрировать в любом контексте, если BehaviourObject действительно имеет компонент MyBehaviour.
-
-
-## Примечания
-- Доступна динамическая регистрация, если вы обратитесь к контейнеру в Runtime и зарегистрируете в него зависимость.
